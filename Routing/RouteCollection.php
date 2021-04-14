@@ -127,7 +127,7 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
                 ->setValueIfParameterExists($container, $this->uriPrefixes[self::RESOURCE_URL], 'bbapp.routing.resource_uri_prefix')
                 ->setValueIfParameterExists($container, $this->defaultScheme, 'bbapp.routing.default_protocol');
 
-        if (null === $this->logger && $container->has('logging')) {
+        if (null === $this->logger && $container->has('lo')) {
             $this->logger = $container->get('logging');
         }
     }

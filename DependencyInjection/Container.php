@@ -42,7 +42,7 @@ class Container extends sfContainerBuilder implements ContainerInterface
      * Change current method default behavior: if we try to get a synthetic service it will return
      * null instead of throwing an exception;.
      *
-     * @see Symfony\Component\DependencyInjection\ContainerBuilder::get()
+     * @see \Symfony\Component\DependencyInjection\ContainerBuilder::get()
      */
     public function get($id, $invalid_behavior = sfContainerInterface::EXCEPTION_ON_INVALID_REFERENCE)
     {

@@ -28,22 +28,30 @@ use BackBee\Config\Exception\InvalidConfigException;
 use BackBee\DependencyInjection\Container;
 use BackBee\DependencyInjection\DispatchTagEventInterface;
 use BackBee\DependencyInjection\Dumper\DumpableServiceInterface;
+use BackBee\Exception\InvalidArgumentException;
 use BackBee\Util\Collection\Collection;
 use BackBee\Util\File\File;
 use DateTime;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
+use function array_key_exists;
+use function count;
+use function in_array;
+use function is_array;
 use function unserialize;
 
 /**
+ * Class Config
+ *
  * A set of configuration parameters store in a yaml file
  * The parameters had to be filtered by section
  * Note that parameters and services will be set only if setContainer() is called.
  *
- * @category    BackBee
+ * @package BackBee\Config
  *
- * @copyright   Lp digital system
- * @author      c.rouillon <charles.rouillon@lp-digital.fr>, e.chau <eric.chau@lp-digital.fr>
+ * @author  c.rouillon <charles.rouillon@lp-digital.fr>
+ * @author  e.chau <eric.chau@lp-digital.fr>
+ * @author  Djoudi Bensid <djoudi.bensid@lp-digital.fr>
  */
 class Config implements DispatchTagEventInterface, DumpableServiceInterface
 {
@@ -52,7 +60,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @var string
      */
-    public const CONFIG_PROXY_CLASSNAME = 'BackBee\Config\ConfigProxy';
+    public const CONFIG_PROXY_CLASSNAME = ConfigProxy::class;
 
     /**
      * Default config file to look for.
@@ -148,12 +156,16 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      * @param Container|null      $container     The BackBee Container
      * @param boolean             $debug         The debug mode
      * @param array               $yml_to_ignore List of yaml filename to ignore form loading/parsing process
+     *
+     * @throws InvalidArgumentException
+     * @throws InvalidBaseDirException
+     * @throws InvalidConfigException
      */
     public function __construct(
-        $basedir,
+        string $basedir,
         CacheInterface $cache = null,
         Container $container = null,
-        $debug = false,
+        bool $debug = false,
         array $yml_to_ignore = array()
     ) {
         $this->basedir = $basedir;
@@ -178,7 +190,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @return array The configuration section if exists NULL else
      */
-    public function __call($name, $arguments)
+    public function __call(string $name, array $arguments)
     {
         $result = null;
         if (1 === preg_match('/get([a-z]+)config/i', strtolower($name), $sections)) {
@@ -202,7 +214,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @return Config
      */
-    public function setContainer(Container $container = null)
+    public function setContainer(Container $container = null): Config
     {
         $this->container = $container;
         $this->parameters = array();
@@ -217,7 +229,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @return Config
      */
-    public function setCache(CacheInterface $cache)
+    public function setCache(CacheInterface $cache): Config
     {
         $this->cache = $cache;
 
@@ -231,7 +243,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @return array
      */
-    public function getDebugData()
+    public function getDebugData(): array
     {
         return $this->debug_data;
     }
@@ -241,7 +253,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @param string|array $filename yaml filename(s) to ignore
      */
-    public function addYamlFilenameToIgnore($filename)
+    public function addYamlFilenameToIgnore($filename): void
     {
         $this->yml_names_to_ignore = array_unique(array_merge($this->yml_names_to_ignore, (array)$filename));
     }
@@ -262,12 +274,10 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
         if (array_key_exists($section, $this->raw_parameters)) {
             return $this->raw_parameters[$section];
         }
-
-        return;
     }
 
     /**
-     * Returns all raw paramter sections.
+     * Returns all raw parameter sections.
      *
      * @return array
      */
@@ -309,7 +319,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @return self
      */
-    public function deleteSection($section): Config
+    public function deleteSection(string $section): Config
     {
         unset($this->raw_parameters[$section], $this->parameters[$section]);
 
@@ -321,10 +331,10 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @return self
      */
-    public function deleteAllSections()
+    public function deleteAllSections(): Config
     {
-        $this->raw_parameters = array();
-        $this->parameters = array();
+        $this->raw_parameters = [];
+        $this->parameters = [];
 
         return $this;
     }
@@ -336,7 +346,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @return self
      */
-    public function setEnvironment($env)
+    public function setEnvironment(string $env): Config
     {
         $this->environment = $env;
 
@@ -350,7 +360,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @return self
      */
-    public function setDebug($debug)
+    public function setDebug(bool $debug): Config
     {
         $this->debug = $debug;
 
@@ -365,7 +375,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @return boolean
      */
-    public function sectionHasKey($section, $key)
+    public function sectionHasKey(string $section, string $key): bool
     {
         return (isset($this->raw_parameters[$section])
             && is_array($this->raw_parameters[$section])
@@ -382,7 +392,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @return Config The current config object
      */
-    public function setSection($section, array $config, $overwrite = false)
+    public function setSection(string $section, array $config, bool $overwrite = false): Config
     {
         if (false === $overwrite && array_key_exists($section, $this->raw_parameters)) {
             $this->raw_parameters[$section] = Collection::array_merge_assoc_recursive(
@@ -403,9 +413,15 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
     /**
      * Extends the current instance with a new base directory.
      *
-     * @param string $basedir Optional base directory
+     * @param null $basedir Optional base directory
+     * @param bool $overwrite
+     *
+     * @return Config
+     * @throws InvalidArgumentException
+     * @throws InvalidBaseDirException
+     * @throws InvalidConfigException
      */
-    public function extend($basedir = null, $overwrite = false)
+    public function extend($basedir = null, bool $overwrite = false): self
     {
         if (null === $basedir) {
             $basedir = $this->basedir;
@@ -430,19 +446,19 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
     }
 
     /**
-     * Returns setted base directory.
+     * Returns base directory.
      *
      * @return string absolute path to current Config base directory
      */
-    public function getBaseDir()
+    public function getBaseDir(): string
     {
         return $this->basedir;
     }
 
     /**
-     * @see BackBee\DependencyInjection\DispatchTagEventInterface::needDispatchEvent
+     * @see \BackBee\DependencyInjection\DispatchTagEventInterface::needDispatchEvent
      */
-    public function needDispatchEvent()
+    public function needDispatchEvent(): bool
     {
         return true;
     }
@@ -461,11 +477,11 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      * Dumps current service state so we can restore it later by calling DumpableServiceInterface::restore()
      * with the dump array produced by this method.
      *
-     * @return array contains every datas required by this service to be restored at the same state
+     * @return array contains every data required by this service to be restored at the same state
      */
-    public function dump(array $options = array())
+    public function dump(array $options = array()): array
     {
-        return array(
+        return [
             'basedir' => $this->basedir,
             'raw_parameters' => $this->raw_parameters,
             'environment' => $this->environment,
@@ -473,7 +489,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
             'yml_names_to_ignore' => $this->yml_names_to_ignore,
             'has_cache' => null !== $this->cache,
             'has_container' => null !== $this->container,
-        );
+        ];
     }
 
     /**
@@ -490,6 +506,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      * @param string $basedir The base directory
      *
      * @return boolean Returns TRUE if a valid cache has been found, FALSE otherwise
+     * @throws InvalidArgumentException
      */
     private function loadFromCache($basedir)
     {
@@ -523,16 +540,21 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @param string $basedir The base directory
      *
-     * @return boolean Returns TRUE if a valid cache has been saved, FALSE otherwise
+     * @return bool Returns TRUE if a valid cache has been saved, FALSE otherwise
      */
-    private function saveToCache($basedir)
+    private function saveToCache(string $basedir)
     {
         if (true === $this->debug) {
             return false;
         }
 
         if (null !== $this->cache) {
-            return $this->cache->save($this->getCacheId($basedir), serialize($this->raw_parameters), null, null, true);
+            return $this->cache->save(
+                $this->getCacheId($basedir),
+                serialize($this->raw_parameters),
+                null,
+                null
+            );
         }
 
         return false;
@@ -544,8 +566,9 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      * @param string $basedir The base directory
      *
      * @return DateTime
+     * @throws InvalidArgumentException
      */
-    private function getCacheExpire($basedir)
+    private function getCacheExpire(string $basedir): DateTime
     {
         $expire = 0;
 
@@ -571,7 +594,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @return string
      */
-    private function getCacheId($basedir)
+    private function getCacheId(string $basedir): string
     {
         return md5('config-' . $basedir . $this->environment);
     }
@@ -583,9 +606,9 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @return array
      *
-     * @throws InvalidBaseDirException Occurs if the base directory cannont be read
+     * @throws InvalidArgumentException
      */
-    private function getYmlFiles($basedir)
+    private function getYmlFiles(string $basedir): array
     {
         $ymlFiles = File::getFilesByExtension($basedir, self::EXTENSION);
 
@@ -599,7 +622,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
 
         foreach ($ymlFiles as &$file) {
             $name = basename($file);
-            if (in_array(substr($name, 0, strrpos($name, '.')), $this->yml_names_to_ignore)) {
+            if (in_array(substr($name, 0, strrpos($name, '.')), $this->yml_names_to_ignore, true)) {
                 $file = null;
             }
         }
@@ -611,8 +634,10 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      * Loads the config files from the base directory.
      *
      * @param string $basedir The base directory
+     * @param bool   $overwrite
      *
-     * @throws InvalidBaseDirException Occurs if the base directory can't be read
+     * @throws InvalidConfigException
+     * @throws InvalidArgumentException
      */
     private function loadFromBaseDir($basedir, $overwrite = false)
     {
@@ -625,22 +650,23 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      * Try to parse a yaml config file.
      *
      * @param string $filename
+     * @param bool   $overwrite
      *
      * @throws InvalidConfigException Occurs when the file can't be parsed
      */
-    private function loadFromFile($filename, $overwrite = false)
+    private function loadFromFile(string $filename, bool $overwrite = false): void
     {
         try {
-            $yamlDatas = Yaml::parse(file_get_contents($filename));
+            $yamlData = Yaml::parse(file_get_contents($filename));
 
-            if (is_array($yamlDatas)) {
+            if (is_array($yamlData)) {
                 if (true === $this->debug) {
-                    $this->debug_data[$filename] = $yamlDatas;
+                    $this->debug_data[$filename] = $yamlData;
                 }
 
                 if (self::CONFIG_FILE . '.' . self::EXTENSION === basename($filename) ||
                     self::CONFIG_FILE . '.' . $this->environment . '.' . self::EXTENSION === basename($filename)) {
-                    foreach ($yamlDatas as $component => $config) {
+                    foreach ($yamlData as $component => $config) {
                         if (!is_array($config)) {
                             $this->container->get('logger')->error(
                                 'Bad configuration, array expected, given : ' . $config
@@ -649,7 +675,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
                         $this->setSection($component, $config, $overwrite);
                     }
                 } else {
-                    $this->setSection(basename($filename, '.' . self::EXTENSION), $yamlDatas, $overwrite);
+                    $this->setSection(basename($filename, '.' . self::EXTENSION), $yamlData, $overwrite);
                 }
             }
         } catch (ParseException $e) {
@@ -662,7 +688,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @return array
      */
-    private function compileAllParameters()
+    private function compileAllParameters(): array
     {
         foreach (array_keys($this->raw_parameters) as $section) {
             $this->parameters[$section] = $this->compileParameters($section);
@@ -676,7 +702,7 @@ class Config implements DispatchTagEventInterface, DumpableServiceInterface
      *
      * @param string|null $section The selected configuration section, can be null
      *
-     * @return array
+     * @return array|void
      */
     private function compileParameters($section = null)
     {

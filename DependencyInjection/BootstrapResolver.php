@@ -21,12 +21,14 @@
 
 namespace BackBee\DependencyInjection;
 
-use Symfony\Component\Yaml\Yaml;
 use BackBee\BBApplication;
 use BackBee\DependencyInjection\Exception\BootstrapFileNotFoundException;
 use BackBee\Util\Resolver\BootstrapDirectory;
+use Symfony\Component\Yaml\Yaml;
 
 /**
+ * Class BootstrapResolver
+ *
  * This resolver allow us to find the right bootstrap.yml file with a base directory, a context
  * and a environment. Resolver will follow this path, from the most specific to the most global:.
  *
@@ -41,15 +43,13 @@ use BackBee\Util\Resolver\BootstrapDirectory;
  *                     |_ bootstrap.yml (1)
  *                 |_ bootstrap.yml (2)
  *
+ * @package BackBee\DependencyInjection
  *
- * @category    BackBee
- *
- * @copyright   Lp digital system
- * @author      e.chau <eric.chau@lp-digital.fr>
+ * @author  e.chau <eric.chau@lp-digital.fr>
  */
 class BootstrapResolver
 {
-    const BOOTSTRAP_FILENAME = 'bootstrap.yml';
+    public const BOOTSTRAP_FILENAME = 'bootstrap.yml';
 
     /**
      * base directory from where we define in which directory to look into.
@@ -79,11 +79,11 @@ class BootstrapResolver
      * @param string $context     application's context
      * @param string $environment application's environment
      */
-    public function __construct($baseDir, $context, $environment)
+    public function __construct(string $baseDir, string $context, string $environment)
     {
         $this->baseDir = $baseDir;
-        $this->context = null === $context ? BBApplication::DEFAULT_CONTEXT : $context;
-        $this->environment = null === $environment ? BBApplication::DEFAULT_ENVIRONMENT : $environment;
+        $this->context = $context ?? BBApplication::DEFAULT_CONTEXT;
+        $this->environment = $environment ?? BBApplication::DEFAULT_ENVIRONMENT;
     }
 
     /**
@@ -94,13 +94,13 @@ class BootstrapResolver
      *
      * @throws BootstrapFileNotFoundException if bootstrap.yml is not found or not readable
      */
-    public function getBootstrapParameters()
+    public function getBootstrapParameters(): array
     {
         $bootstrapFilepath = null;
 
         $directories = BootstrapDirectory::getDirectories($this->baseDir, $this->context, $this->environment);
         foreach ($directories as $directory) {
-            $bootstrapFilepath = $directory.DIRECTORY_SEPARATOR.self::BOOTSTRAP_FILENAME;
+            $bootstrapFilepath = $directory . DIRECTORY_SEPARATOR . self::BOOTSTRAP_FILENAME;
             if (is_file($bootstrapFilepath) && is_readable($bootstrapFilepath)) {
                 break;
             }

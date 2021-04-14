@@ -21,10 +21,10 @@
 
 namespace BackBee\DependencyInjection;
 
+use BackBee\Exception\InvalidArgumentException;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\DefinitionDecorator;
 use Symfony\Component\DependencyInjection\Reference;
-use BackBee\Exception\InvalidArgumentException;
 
 /**
  * @category    BackBee
@@ -100,7 +100,7 @@ class ContainerProxy extends Container
     }
 
     /**
-     * @see Symfony\Component\DependencyInjection\ContainerBuilder::set
+     * @see \Symfony\Component\DependencyInjection\ContainerBuilder::set
      */
     public function set($id, $service, $scope = self::SCOPE_CONTAINER)
     {
@@ -128,7 +128,7 @@ class ContainerProxy extends Container
     }
 
     /**
-     * @see Symfony\Component\DependencyInjection\ContainerBuilder::has
+     * @see \Symfony\Component\DependencyInjection\ContainerBuilder::has
      */
     public function has($id)
     {
@@ -138,7 +138,7 @@ class ContainerProxy extends Container
     }
 
     /**
-     * @see Symfony\Component\DependencyInjection\ContainerBuilder::getDefinition
+     * @see \Symfony\Component\DependencyInjection\ContainerBuilder::getDefinition
      */
     public function getDefinition($id)
     {
@@ -148,7 +148,7 @@ class ContainerProxy extends Container
     }
 
     /**
-     * @see Symfony\Component\DependencyInjection\ContainerBuilder::hasDefinition
+     * @see \Symfony\Component\DependencyInjection\ContainerBuilder::hasDefinition
      */
     public function hasDefinition($id)
     {
@@ -158,7 +158,7 @@ class ContainerProxy extends Container
     }
 
     /**
-     * @see Symfony\Component\DependencyInjection\ContainerBuilder::getDefinitions
+     * @see \Symfony\Component\DependencyInjection\ContainerBuilder::getDefinitions
      */
     public function getDefinitions()
     {
@@ -172,7 +172,7 @@ class ContainerProxy extends Container
      *
      * @param string $id the id of the service we try to load its definition
      *
-     * @return null|Symfony\Component\DependencyInjection\Definition return null if no definition has been found
+     * @return null|Definition return null if no definition has been found
      *                                                               in raw definitions, else the Definition object newly build
      */
     private function tryLoadDefinitionFromRaw($id)
@@ -203,7 +203,7 @@ class ContainerProxy extends Container
      *
      * @param array $array the raw definition's array
      *
-     * @return Symfony\Component\DependencyInjection\Definition the definition object
+     * @return Definition the definition object
      */
     private function buildDefinition(array $array)
     {
@@ -306,10 +306,12 @@ class ContainerProxy extends Container
 
             foreach ($array['tags'] as $tag) {
                 if (!isset($tag['name'])) {
-                    throw new InvalidArgumentException(sprintf(
-                        'A "tags" entry is missing a "name" key for service "%s".',
-                        $id
-                    ));
+                    throw new InvalidArgumentException(
+                        sprintf(
+                            'A "tags" entry is missing a "name" key for service "%s".',
+                            $id
+                        )
+                    );
                 }
 
                 $name = $tag['name'];
@@ -317,11 +319,13 @@ class ContainerProxy extends Container
 
                 foreach ($tag as $attribute => $value) {
                     if (!is_scalar($value)) {
-                        throw new InvalidArgumentException(sprintf(
-                            'A "tags" attribute must be of a scalar-type for service "%s", tag "%s".',
-                            $id,
-                            $name
-                        ));
+                        throw new InvalidArgumentException(
+                            sprintf(
+                                'A "tags" attribute must be of a scalar-type for service "%s", tag "%s".',
+                                $id,
+                                $name
+                            )
+                        );
                     }
                 }
 

@@ -22,17 +22,17 @@
 namespace BackBee;
 
 use BackBee\AutoLoader\AutoLoader;
-use BackBee\Bundle\BundleInterface;
 use BackBee\Cache\CacheInterface;
 use BackBee\Cache\DAO\Cache;
 use BackBee\Config\Config;
+use BackBee\Console\AbstractCommand;
 use BackBee\Console\Console;
 use BackBee\Controller\FrontController;
-use BackBee\DependencyInjection\Container;
 use BackBee\DependencyInjection\ContainerBuilder;
 use BackBee\DependencyInjection\ContainerInterface;
 use BackBee\DependencyInjection\Dumper\DumpableServiceInterface;
 use BackBee\DependencyInjection\Dumper\DumpableServiceProxyInterface;
+use BackBee\Event\Dispatcher;
 use BackBee\Event\Event;
 use BackBee\Exception\BBException;
 use BackBee\Renderer\AbstractRenderer;
@@ -41,47 +41,46 @@ use BackBee\Routing\RouteCollection;
 use BackBee\Security\SecurityContext;
 use BackBee\Security\Token\BBUserToken;
 use BackBee\Site\Site;
+use BackBee\Util\Doctrine\EntityManagerCreator;
 use BackBee\Util\File\File;
 use Doctrine\Common\Annotations\AnnotationRegistry;
+use Doctrine\Common\EventManager;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Events;
 use Exception;
 use InvalidArgumentException;
 use LogicException;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
-use Swift_Mailer;
-use Swift_SmtpTransport;
+use ReflectionException;
+use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\Debug\Debug;
 use Symfony\Component\Debug\Exception\ContextErrorException;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
+use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Validator\ValidatorInterface;
+use function is_array;
 
 /**
+ * Class BBApplication
+ *
  * The main BackBee application.
  *
- * @category    BackBee
+ * @package BackBee
  *
- * @copyright   Lp digital system
- * @author      c.rouillon <charles.rouillon@lp-digital.fr>
+ * @author  c.rouillon <charles.rouillon@lp-digital.fr>
+ * @author  Djoudi Bensid <djoudi.bensid@lp-digital.fr>
  */
-class BBApplication implements ApplicationInterface, DumpableServiceInterface, DumpableServiceProxyInterface
+class BBApplication extends Kernel implements ApplicationInterface, DumpableServiceInterface, DumpableServiceProxyInterface
 {
-    const VERSION = '1.3.11';
-
-    /**
-     * application's service container.
-     *
-     * @var ContainerInterface
-     */
-    private $container;
+    public const VERSION = '4.0.1';
 
     /**
      * application's context.
@@ -91,26 +90,27 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     private $context;
 
     /**
-     * application's environment.
-     *
-     * @var string
+     * @var bool
      */
-    private $environment;
+    private $isInitialized;
 
     /**
-     * define if application is started with debug mode or not.
-     *
-     * @var boolean
+     * @var false
      */
-    private $debug;
-    private $isInitialized;
     private $isStarted;
+
     private $repository;
+
     private $baseRepository;
+
     private $resourceDir;
+
     private $storageDir;
+
     private $tmpDir;
+
     private $classcontentDir;
+
     private $overwriteConfig;
 
     /**
@@ -123,12 +123,14 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     /**
      * @var array
      */
-    private $dumpDatas;
+    private $dumpData;
 
     /**
-     * @param null $context
-     * @param null $environment
-     * @param true $overwrite_config set true if you need overide base config with the context config
+     * BBApplication constructor.
+     *
+     * @param null  $context
+     * @param null  $environment
+     * @param false $overwrite_config
      *
      * @throws BBException
      * @throws ContextErrorException
@@ -143,9 +145,10 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
         $this->environment = null !== $environment && is_string($environment)
             ? $environment
             : self::DEFAULT_ENVIRONMENT;
-        $this->dumpDatas = [];
+        $this->dumpData = [];
 
         $this->initAnnotationReader();
+        $this->initializeBundles();
         $this->initContainer();
 
         register_shutdown_function([$this, 'onFatalError']);
@@ -207,6 +210,8 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
 
         // trigger bbapplication.init
         $this->getEventDispatcher()->dispatch('bbapplication.init', new Event($this));
+
+        parent::__construct($environment, $this->isDebugMode());
     }
 
     public function __destruct()
@@ -221,45 +226,45 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
         }
     }
 
+//    /**
+//     * @return Swift_Mailer
+//     */
+//    public function getMailer()
+//    {
+//        if (!$this->getContainer()->has('mailer') || is_null($this->getContainer()->get('mailer'))) {
+//            if (null !== $mailer_config = $this->getConfig()->getSection('mailer')) {
+//                $smtp = is_array($mailer_config['smtp']) ? reset($mailer_config['smtp']) : $mailer_config['smtp'];
+//                $port = is_array($mailer_config['port']) ? reset($mailer_config['port']) : $mailer_config['port'];
+//                $encryption = !isset($mailer_config['encryption'])
+//                    ? null : (is_array($mailer_config['encryption'])
+//                        ? reset($mailer_config['encryption'])
+//                        : $mailer_config['encryption']);
+//
+//                $transport = Swift_SmtpTransport::newInstance($smtp, $port, $encryption);
+//                if (array_key_exists('username', $mailer_config) && array_key_exists('password', $mailer_config)) {
+//                    $username = is_array($mailer_config['username'])
+//                        ? reset($mailer_config['username'])
+//                        : $mailer_config['username'];
+//                    $password = is_array($mailer_config['password'])
+//                        ? reset($mailer_config['password'])
+//                        : $mailer_config['password'];
+//
+//                    $transport->setUsername($username)->setPassword($password);
+//                }
+//
+//                $this->getContainer()->set('mailer', Swift_Mailer::newInstance($transport));
+//            }
+//        }
+//
+//        return $this->getContainer()->get('mailer');
+//    }
+
     /**
-     * @return Swift_Mailer
-     */
-    public function getMailer()
-    {
-        if (!$this->getContainer()->has('mailer') || is_null($this->getContainer()->get('mailer'))) {
-            if (null !== $mailer_config = $this->getConfig()->getSection('mailer')) {
-                $smtp = is_array($mailer_config['smtp']) ? reset($mailer_config['smtp']) : $mailer_config['smtp'];
-                $port = is_array($mailer_config['port']) ? reset($mailer_config['port']) : $mailer_config['port'];
-                $encryption = !isset($mailer_config['encryption'])
-                    ? null : (is_array($mailer_config['encryption'])
-                        ? reset($mailer_config['encryption'])
-                        : $mailer_config['encryption']);
-
-                $transport = Swift_SmtpTransport::newInstance($smtp, $port, $encryption);
-                if (array_key_exists('username', $mailer_config) && array_key_exists('password', $mailer_config)) {
-                    $username = is_array($mailer_config['username'])
-                        ? reset($mailer_config['username'])
-                        : $mailer_config['username'];
-                    $password = is_array($mailer_config['password'])
-                        ? reset($mailer_config['password'])
-                        : $mailer_config['password'];
-
-                    $transport->setUsername($username)->setPassword($password);
-                }
-
-                $this->getContainer()->set('mailer', Swift_Mailer::newInstance($transport));
-            }
-        }
-
-        return $this->getContainer()->get('mailer');
-    }
-
-    /**
-     * @return boolean
+     * {@inheritDoc}
      */
     public function isDebugMode()
     {
-        $debug = (bool)$this->debug;
+        $debug = $this->debug;
         if (null !== $this->getContainer() && $this->getContainer()->hasParameter('debug')) {
             $debug = $this->getContainer()->getParameter('debug');
         }
@@ -268,19 +273,19 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * @return boolean
+     * {@inheritDoc}
      */
-    public function isOverridedConfig()
+    public function isOverridedConfig(): bool
     {
         return $this->overwriteConfig;
     }
 
     /**
-     * @param type $name
+     * @param string $name
      *
-     * @return BundleInterface|null
+     * @return object|null
      */
-    public function getBundle($name)
+    public function getBundle($name, $first = true)
     {
         $bundle = null;
         if ($this->getContainer()->has('bundle.' . $name)) {
@@ -298,7 +303,7 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     public function getBundles()
     {
         $bundles = [];
-        foreach ($this->getContainer()->findTaggedServiceIds('bundle') as $id => $datas) {
+        foreach ($this->getContainer()->findTaggedServiceIds('bundle') as $id => $data) {
             $bundles[] = $this->getContainer()->get($id);
         }
 
@@ -306,7 +311,9 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * @param Site $site
+     * @param Site|null $site
+     *
+     * @throws Controller\Exception\FrontControllerException
      */
     public function start(Site $site = null)
     {
@@ -349,7 +356,7 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * @return FrontController
+     * {@inheritDoc}
      */
     public function getController(): FrontController
     {
@@ -357,7 +364,7 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * @return RouteCollection
+     * {@inheritDoc}
      */
     public function getRouting(): RouteCollection
     {
@@ -365,7 +372,7 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * @return AutoLoader
+     * {@inheritDoc}
      */
     public function getAutoloader(): AutoLoader
     {
@@ -373,27 +380,25 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * @return string
+     * {@inheritDoc}
      */
-    public function getBBDir()
+    public function getBBDir(): string
     {
         return __DIR__;
     }
 
     /**
-     * Returns path to Data directory.
-     *
-     * @return string absolute path to Data directory
+     * {@inheritDoc}
      */
-    public function getDataDir()
+    public function getDataDir(): string
     {
         return $this->container->getParameter('bbapp.data.dir');
     }
 
     /**
-     * @return string
+     * {@inheritDoc}
      */
-    public function getBaseDir()
+    public function getBaseDir(): string
     {
         return dirname($this->getBBDir());
     }
@@ -419,19 +424,19 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * Returns the starting context.
-     *
-     * @return string|NULL
+     * {@inheritDoc}
      */
-    public function getContext()
+    public function getContext(): string
     {
         return $this->context;
     }
 
     /**
+     * Get BackBee user token.
+     *
      * @return BBUserToken|null
      */
-    public function getBBUserToken()
+    public function getBBUserToken(): ?BBUserToken
     {
         $token = $this->getSecurityContext()->getToken();
 
@@ -478,21 +483,20 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
         return $this->getContainer()->get('cache.bootstrap');
     }
 
-    public function getCacheDir()
+    /**
+     * {@inheritDoc}
+     */
+    public function getCacheDir(): string
     {
-        if (null === $this->container) {
-            throw new Exception('Application\'s container is not ready!');
-        }
-
-        return $this->getContainer()->getParameter('bbapp.cache.dir');
+        return $this->getBaseDir() . DIRECTORY_SEPARATOR . 'cache';
     }
 
     /**
-     * @return Container
+     * {@inheritdoc}
      */
-    public function getContainer()
+    public function getLogDir(): string
     {
-        return $this->container;
+        return $this->getBaseDir() . DIRECTORY_SEPARATOR . 'log';
     }
 
     /**
@@ -506,33 +510,17 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * @return Config
+     * {@inheritDoc}
      */
     public function getConfig(): Config
     {
-//        if (null === $this->container) {
-//            throw new Exception('Application\'s container is not ready!');
-//        }
-
         return $this->container->get('config');
     }
 
     /**
-     * Get current environment.
-     *
-     * @return string
+     * {@inheritDoc}
      */
-    public function getEnvironment()
-    {
-        return $this->environment;
-    }
-
-    /**
-     * get current configuration directory path
-     *
-     * @return string
-     */
-    public function getConfigDir()
+    public function getConfigDir(): string
     {
         return $this->getRepository() . DIRECTORY_SEPARATOR . 'Config';
     }
@@ -560,7 +548,7 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
             } catch (Exception $exception) {
                 $this->getLogging()->error(
                     sprintf(
-                        '%s : %s :%s',
+                        '%s : %s : %s',
                         __CLASS__,
                         __FUNCTION__,
                         $exception->getMessage()
@@ -573,15 +561,15 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * @return EventDispatcherInterface
+     * @return Dispatcher|null
      */
-    public function getEventDispatcher(): EventDispatcherInterface
+    public function getEventDispatcher(): ?Dispatcher
     {
         return $this->getContainer()->get('event.dispatcher');
     }
 
     /**
-     * @return LoggerInterface
+     * @return LoggerInterface|null
      */
     public function getLogging(): LoggerInterface
     {
@@ -606,11 +594,9 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * get current repository directory path
-     *
-     * @return string
+     * {@inheritDoc}
      */
-    public function getRepository()
+    public function getRepository(): string
     {
         if (null === $this->repository) {
             $this->repository = $this->getBaseRepository();
@@ -623,11 +609,9 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * get default repository directory path
-     *
-     * @return string
+     * {@inheritDoc}
      */
-    public function getBaseRepository()
+    public function getBaseRepository(): string
     {
         if (null === $this->baseRepository) {
             $this->baseRepository = $this->getBaseDir() . DIRECTORY_SEPARATOR . 'repository';
@@ -637,11 +621,9 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * Return the classcontent repositories path for this instance.
-     *
-     * @return array
+     * {@inheritDoc}
      */
-    public function getClassContentDir()
+    public function getClassContentDir(): array
     {
         if (null === $this->classcontentDir) {
             $this->classcontentDir = [];
@@ -660,49 +642,47 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * Push one directory at the end of classcontent dirs.
+     * Push one directory at the end of class content dirs.
      *
      * @param string $dir
      *
-     * @return ApplicationInterface
+     * @return BBApplication
      */
-    public function pushClassContentDir($dir)
+    public function pushClassContentDir(string $dir): self
     {
         File::resolveFilepath($dir);
 
-        $classcontentdir = $this->getClassContentDir();
-        array_push($classcontentdir, $dir);
+        $classContentDir = $this->getClassContentDir();
+        $classContentDir[] = $dir;
 
-        $this->classcontentDir = array_unique($classcontentdir);
+        $this->classcontentDir = array_unique($classContentDir);
 
         return $this;
     }
 
     /**
-     * Prepend one directory at the beginning of classcontent dirs.
+     * Prepend one directory at the beginning of class content dirs.
      *
-     * @param type $dir
+     * @param string $dir
      *
-     * @return ApplicationInterface
+     * @return BBApplication
      */
-    public function unshiftClassContentDir($dir)
+    public function unshiftClassContentDir(string $dir): self
     {
         File::resolveFilepath($dir);
 
-        $classcontentdir = $this->getClassContentDir();
-        array_unshift($classcontentdir, $dir);
+        $classContentDir = $this->getClassContentDir();
+        array_unshift($classContentDir, $dir);
 
-        $this->classcontentDir = array_unique($classcontentdir);
+        $this->classcontentDir = array_unique($classContentDir);
 
         return $this;
     }
 
     /**
-     * Return the resource directories, if undefined, initialized with common resources.
-     *
-     * @return array The resource directories
+     * {@inheritDoc}
      */
-    public function getResourceDir()
+    public function getResourceDir(): array
     {
         if (null === $this->resourceDir) {
             $this->initResourceDir();
@@ -714,7 +694,7 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     /**
      * Init the default resource directories
      */
-    protected function initResourceDir()
+    protected function initResourceDir(): void
     {
         $this->resourceDir = [];
 
@@ -738,7 +718,7 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
             }
         }
 
-        array_map(['BackBee\Util\File\File', 'resolveFilepath'], $this->resourceDir);
+        array_map([File::class, 'resolveFilepath'], $this->resourceDir);
     }
 
     /**
@@ -761,9 +741,9 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * Prepend one directory at the begining of resources dirs.
+     * Prepend one directory at the beginning of resources dirs.
      *
-     * @param type $dir
+     * @param string $dir
      *
      * @return ApplicationInterface
      */
@@ -782,13 +762,13 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     /**
      * Prepend one directory of resources.
      *
-     * @param String $dir The new resource directory to add
+     * @param string $dir The new resource directory to add
      *
-     * @return ApplicationInterface The current BBApplication
+     * @return BBApplication The current BBApplication
      *
      * @throws BBException Occur on invalid path or invalid resource directories
      */
-    public function addResourceDir($dir)
+    public function addResourceDir(string $dir): self
     {
         if (null === $this->resourceDir) {
             $this->initResourceDir();
@@ -874,7 +854,7 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     /**
      * @return Site|null
      */
-    public function getSite()
+    public function getSite(): ?Site
     {
         return $this->getContainer()->has('site') ? $this->getContainer()->get('site') : null;
     }
@@ -912,14 +892,17 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * @return boolean
+     * {@inheritDoc}
      */
-    public function isStarted()
+    public function isStarted(): bool
     {
         return $this->isStarted;
     }
 
-    public function isClientSAPI()
+    /**
+     * {@inheritDoc}
+     */
+    public function isClientSAPI(): bool
     {
         return isset($GLOBALS['argv']);
     }
@@ -933,6 +916,8 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
      * * Commands extend Symfony\Component\Console\Command\Command
      *
      * @param Console $console An Application instance
+     *
+     * @throws ReflectionException
      */
     public function registerCommands(Console $console)
     {
@@ -943,11 +928,11 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
 
             foreach ($finder as $file) {
                 if ($relativePath = $file->getRelativePath()) {
-                    $ns .= '\\' . strtr($relativePath, '/', '\\');
+                    $ns .= '\\' . str_replace('/', '\\', $relativePath);
                 }
                 $r = new ReflectionClass($ns . '\\' . $file->getBasename('.php'));
                 if (
-                    $r->isSubclassOf('BackBee\\Console\\AbstractCommand')
+                    $r->isSubclassOf(AbstractCommand::class)
                     && !$r->isAbstract()
                     && !$r->getConstructor()->getNumberOfRequiredParameters()
                 ) {
@@ -967,11 +952,11 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
 
             foreach ($finder as $file) {
                 if ($relativePath = $file->getRelativePath()) {
-                    $ns .= '\\' . strtr($relativePath, '/', '\\');
+                    $ns .= '\\' . str_replace('/', '\\', $relativePath);
                 }
                 $r = new ReflectionClass($ns . '\\' . $file->getBasename('.php'));
                 if (
-                    $r->isSubclassOf('BackBee\\Console\\AbstractCommand')
+                    $r->isSubclassOf(AbstractCommand::class)
                     && !$r->isAbstract()
                     && 0 === $r->getConstructor()->getNumberOfRequiredParameters()
                 ) {
@@ -997,12 +982,12 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
      * Dumps current service state so we can restore it later by calling DumpableServiceInterface::restore()
      * with the dump array produced by this method.
      *
-     * @return array contains every datas required by this service to be restored at the same state
+     * @return array contains every data required by this service to be restored at the same state
      */
-    public function dump(array $options = [])
+    public function dump(array $options = []): array
     {
         return array_merge(
-            $this->dumpDatas,
+            $this->dumpData,
             [
                 'classcontent_directories' => $this->classcontentDir,
                 'resources_directories' => $this->resourceDir,
@@ -1016,7 +1001,7 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
      * @param array $dump the dump provided by DumpableServiceInterface::dump() from where we can
      *                    restore current service
      */
-    public function restore(ContainerInterface $container, array $dump)
+    public function restore(ContainerInterface $container, array $dump): void
     {
         $this->classcontentDir = $dump['classcontent_directories'];
         $this->resourceDir = $dump['resources_directories'];
@@ -1033,9 +1018,9 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * @return boolean true if current service is already restored, otherwise false
+     * @return bool true if current service is already restored, otherwise false
      */
-    public function isRestored()
+    public function isRestored(): bool
     {
         return $this->isRestored;
     }
@@ -1043,53 +1028,53 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     /**
      * Initializes application's dependency injection container.
      *
-     * @return ApplicationInterface
+     * @return void
+     * @throws DependencyInjection\Exception\BootstrapFileNotFoundException
+     * @throws DependencyInjection\Exception\ContainerAlreadyExistsException
+     * @throws DependencyInjection\Exception\MissingBootstrapParametersException
      */
-    private function initContainer()
+    private function initContainer(): void
     {
         $this->container = (new ContainerBuilder($this))->getContainer();
-
-        return $this;
     }
 
     /**
-     * @return ApplicationInterface
+     * @throws Exception
      */
-    private function initEnvVariables()
+    private function initEnvVariables(): void
     {
         if ($this->isRestored()) {
-            return $this;
+            return;
         }
 
-        $dateConfig = $this->getConfig()->getDateConfig();
+        $dateConfig = $this->getContainer()->getParameter('date');
         if (false !== $dateConfig && isset($dateConfig['timezone'])) {
             if (false === date_default_timezone_set($dateConfig['timezone'])) {
                 throw new Exception(sprintf('Unabled to set default timezone (:%s)', $dateConfig['timezone']));
             }
 
-            $this->dumpDatas['date_timezone'] = $dateConfig['timezone'];
+            $this->dumpData['date_timezone'] = $dateConfig['timezone'];
         }
 
-        if (null !== $encoding = $this->getConfig()->getEncodingConfig()) {
-            if (array_key_exists('locale', $encoding)) {
-                if (false === setLocale(LC_ALL, $encoding['locale'])) {
-                    throw new Exception(sprintf('Unabled to setLocal with locale %s', $encoding['locale']));
-                }
-
-                $this->dumpDatas['locale'] = $encoding['locale'];
+        if (
+            (null !== $encoding = $this->getContainer()->getParameter('encoding')) &&
+            array_key_exists('locale', $encoding)
+        ) {
+            if (false === setLocale(LC_ALL, $encoding['locale'])) {
+                throw new Exception(sprintf('Unabled to setLocal with locale %s', $encoding['locale']));
             }
-        }
 
-        return $this;
+            $this->dumpData['locale'] = $encoding['locale'];
+        }
     }
 
     /**
-     * @return ApplicationInterface
+     * @return void
      */
-    private function initAutoloader()
+    private function initAutoloader(): void
     {
         if ($this->getAutoloader()->isRestored()) {
-            return $this;
+            return;
         }
 
         $this->getAutoloader()
@@ -1119,16 +1104,14 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
                 )
                 ->registerNamespace('BackBee\Traits', $this->getBaseRepository() . DIRECTORY_SEPARATOR . 'Traits');
         }
-
-        return $this;
     }
 
     /**
      * register all annotations and init the AnnotationReader
      *
-     * @return boolean
+     * @return void
      */
-    private function initAnnotationReader()
+    private function initAnnotationReader(): void
     {
         AnnotationRegistry::registerFile(
             $this->getVendorDir() . '/doctrine/orm/lib/Doctrine/ORM/Mapping/Driver/DoctrineAnnotations.php'
@@ -1161,35 +1144,33 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
     }
 
     /**
-     * @return ApplicationInterface
+     * @return void
      *
      * @throws BBException
      */
-    private function initContentWrapper()
+    private function initContentWrapper(): void
     {
         if ($this->getAutoloader()->isRestored()) {
-            return $this;
+            return;
         }
 
-        if (null === $contentwrapperConfig = $this->getConfig()->getContentwrapperConfig()) {
+        if (null === $contentWrapperConfig = $this->getConfig()->getContentwrapperConfig()) {
             throw new BBException('None class content wrapper found');
         }
 
-        $namespace = isset($contentwrapperConfig['namespace']) ? $contentwrapperConfig['namespace'] : '';
-        $protocol = isset($contentwrapperConfig['protocol']) ? $contentwrapperConfig['protocol'] : '';
-        $adapter = isset($contentwrapperConfig['adapter']) ? $contentwrapperConfig['adapter'] : '';
+        $namespace = $contentWrapperConfig['namespace'] ?? '';
+        $protocol = $contentWrapperConfig['protocol'] ?? '';
+        $adapter = $contentWrapperConfig['adapter'] ?? '';
 
         $this->getAutoloader()->registerStreamWrapper($namespace, $protocol, $adapter);
-
-        return $this;
     }
 
     /**
-     * @return ApplicationInterface
+     * @return void
      *
      * @throws BBException
      */
-    private function initEntityManager()
+    private function initEntityManager(): void
     {
         if (!$this->container->getDefinition('em')->isSynthetic()) {
             return;
@@ -1216,8 +1197,8 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
         }
 
         // Init ORM event
-        $r = new ReflectionClass('Doctrine\ORM\Events');
-        $definition = new Definition('Doctrine\Common\EventManager');
+        $r = new ReflectionClass(Events::class);
+        $definition = new Definition(EventManager::class);
         $definition->addMethodCall('addEventListener', [$r->getConstants(), new Reference('doctrine.listener')]);
         $this->container->setDefinition('doctrine.event_manager', $definition);
 
@@ -1234,60 +1215,91 @@ class BBApplication implements ApplicationInterface, DumpableServiceInterface, D
             }
 
             $definition = new Definition(
-                'Doctrine\ORM\EntityManager', [
+                EntityManager::class,
+                [
                     $doctrineConfig['dbal'],
                     new Reference($loggerId),
                     new Reference('doctrine.event_manager'),
                     new Reference('service_container'),
                 ]
             );
-            $definition->setFactory(['BackBee\Util\Doctrine\EntityManagerCreator', 'create']);
+            $definition->setFactory([EntityManagerCreator::class, 'create']);
             $this->container->setDefinition('em', $definition);
 
             $this->debug(sprintf('%s(): Doctrine EntityManager initialized', __METHOD__));
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
             $this->warning(sprintf('%s(): Cannot initialize Doctrine EntityManager', __METHOD__));
         }
-
-        return $this;
     }
 
     /**
      * Loads every declared bundles into application.
      *
-     * @return ApplicationInterface
+     * @return void
      */
-    private function initBundles()
+    private function initBundles(): void
     {
         $bundleLoader = $this->getContainer()->get('bundle.loader');
-        if (!$bundleLoader->isRestored() && null !== $this->getConfig()->getBundlesConfig()) {
-            $bundleLoader->load($this->getConfig()->getBundlesConfig());
-        }
 
-        return $this;
+        try {
+            $bundles = $this->container->getParameter('bundles');
+
+            // Init BackBee bundles.
+            if (null !== $bundles && !$bundleLoader->isRestored()) {
+                $bundleLoader->load($bundles);
+            }
+
+            // Init kernel bundles.
+            foreach ($this->getKernelBundles() as $bundle) {
+                $bundle->setContainer($this->container);
+                $bundle->boot();
+            }
+        } catch (Exception $exception) {
+            $this->getLogging()->error(
+                sprintf(
+                    '%s : %s : %s',
+                    __CLASS__,
+                    __FUNCTION__,
+                    $exception->getMessage()
+                )
+            );
+        }
     }
 
     /**
      * Registered function for execution on shutdown.
      * Logs fatal error message if exists.
      */
-    public function onFatalError()
+    public function onFatalError(): void
     {
         $error = error_get_last();
-        if (null !== $error && in_array($error['type'], [E_ERROR, E_RECOVERABLE_ERROR])) {
+        if (null !== $error && in_array($error['type'], [E_ERROR, E_RECOVERABLE_ERROR], true)) {
             $this->error($error['message']);
         }
     }
 
     /**
-     * Get app parameter.
-     *
-     * @param string|null $parameter
+     * {@inheritDoc}
      */
-    public function getAppParameter(string $parameter)
+    public function registerBundles(): array
     {
-        $config = $this->getConfig()->getSection('app');
+        return [];
+    }
 
-        return $config[$parameter] ?? null;
+    /**
+     * {@inheritDoc}
+     */
+    public function registerContainerConfiguration(LoaderInterface $loader): void
+    {
+        // Load bundle.yml
+        $loader->load($this->getBBConfigDir() . DIRECTORY_SEPARATOR . 'config.yml');
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getKernelBundles(): array
+    {
+        return $this->bundles;
     }
 }
