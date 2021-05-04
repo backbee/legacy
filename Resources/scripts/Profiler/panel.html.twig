@@ -1,0 +1,65 @@
+<div id="bb-profiler-panel">
+
+    {% for name, template in templates %}
+        <div class="bb-profiler-block">
+            {{ name }}
+            {{ dump(template) }}
+        {{ template.renderblock('toolbar', {
+            'collector': profile.getCollector(name),
+            'profiler_url': profiler_url,
+            'name': name
+          })
+        }}
+        </div>
+    {% endfor %}
+
+
+    <div id="bb-profiler-close">x</div>
+</div>
+
+<style>
+    #bb-profiler-panel{
+        position: fixed;
+        background-color: #f7f7f7;
+        left: 0;
+        right: 0;
+        margin: 0;
+        padding: 0 40px 0 0;
+        z-index: 6000000;
+        font: 11px Verdana, Arial, sans-serif;
+        text-align: left;
+        color: #2f2f2f;
+        background-image: -moz-linear-gradient(top, #e4e4e4, #ffffff);
+        background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#e4e4e4), to(#ffffff));
+        background-image: -o-linear-gradient(top, #e4e4e4, #ffffff);
+        background: linear-gradient(top, #e4e4e4, #ffffff);
+        bottom: 0;
+        border-top: 1px solid #bbb;
+    }
+
+    #bb-profiler-close {
+        display: block;
+        width: 15px;
+        height: 16px;
+        position: absolute;
+        top: 7px;
+        right: 5px;
+        cursor: pointer;
+        color: #000;
+        text-align: center;
+        line-height: 12px;
+        -webkit-border-radius: 3px;
+        -moz-border-radius: 3px;
+        border-radius: 3px;
+    }
+    #bb-profiler-close:hover {
+        color: #fff;
+        background-color: red;
+    }
+</style>
+
+<script>
+    $('#bb-profiler-close').click(function(){
+        $('#bb-profiler-panel').hide();
+    });
+</script>

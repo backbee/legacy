@@ -1,0 +1,16 @@
+# application's synthetic services
+services:
+    bbapp:
+        synthetic: true
+        tags:
+            - { name: "dumpable", dispatch_event: false }
+    container.builder:
+        synthetic: true
+    service_container:
+        synthetic: true
+    site:
+        synthetic: true
+    em:
+        synthetic: true
+    mailer:
+        synthetic: true

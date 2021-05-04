@@ -1,0 +1,7 @@
+<?php
+    $title =  $this->getParam("title","scalar");
+    $title = (is_array($title)) ? (string)reset($title) : "";
+    $target = $this->getParam("target","scalar");
+    $target = (is_array($target))?(string)reset($target): "";
+?>
+<a target="<?php echo $target?>" href="<?php echo $this->getUri($this->value)?>"><?php echo $title;?></a>

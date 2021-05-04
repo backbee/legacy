@@ -1,0 +1,98 @@
+{
+    "name": "backbee/legacy",
+    "description": "BackBee legacy",
+    "keywords": [
+        "CMS",
+        "Core",
+        "Content Management",
+        "No backend CMS",
+        "User Management"
+    ],
+    "type": "library",
+    "license": "GPL-3.0+",
+    "authors": [
+        {
+            "name": "Charles Rouillon",
+            "email": "charles.rouillon@lp-digital.fr"
+        },
+        {
+            "name": "Chau Eric",
+            "email": "eric.chau@lp-digital.fr"
+        },
+        {
+            "name": "Djoudi Bensid",
+            "email": "djoudi.bensid@lp-digital.fr"
+        },
+        {
+            "name": "Mickaël Andrieu",
+            "email": "mickael.andrieu@lp-digital.fr"
+        },
+        {
+            "name": "Florian Kroockmann",
+            "email": "florian.kroockmann@lp-digital.fr"
+        },
+        {
+            "name": "Harris Baptiste",
+            "email": "harris.baptiste@lp-digital.fr"
+        },
+        {
+            "name": "Nicolas Dufreche",
+            "email": "nicolas.dufreche@lp-digital.fr"
+        }
+    ],
+    "require": {
+        "php": ">=5.6.0",
+        "psr/log": "~1.0",
+        "symfony/config": "~2.7.0",
+        "symfony/console": "~2.7.0",
+        "symfony/debug": "~2.7.0",
+        "symfony/doctrine-bridge": "~2.5.0",
+        "symfony/event-dispatcher": "~2.7.0",
+        "symfony/expression-language": "~2.7.0",
+        "symfony/filesystem": "~2.7.0",
+        "symfony/finder": "~2.7.0",
+        "symfony/http-foundation": "2.8.52",
+        "symfony/http-kernel": "~2.7.0",
+        "symfony/routing": "~2.7.0",
+        "symfony/security-acl": "~2.7.0",
+        "symfony/security-core": "~2.7.0",
+        "symfony/security-http": "~2.7.0",
+        "symfony/serializer": "~2.7.0",
+        "symfony/translation": "~2.7.0",
+        "symfony/validator": "~2.7.0",
+        "symfony/yaml": "~2.7.0",
+        "symfony/dependency-injection": "~2.7.0",
+        "doctrine/orm": "v2.5.14",
+        "doctrine/annotations": "1.12.1",
+        "twig/twig": "~1.17",
+        "twig/extensions": "1.1.0",
+        "swiftmailer/swiftmailer": "5.3.0",
+        "jms/serializer": "0.16.0",
+        "jms/metadata": "1.5.1",
+        "willdurand/jsonp-callback-validator": "1.1.0"
+    },
+    "bin": [
+        "backbee"
+    ],
+    "autoload": {
+        "psr-4": {
+            "BackBee\\": ""
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "4.4.2",
+        "phpunit/dbunit": "1.3.1",
+        "mikey179/vfsstream": "1.4.0",
+        "fzaninotto/faker": "1.4.0",
+        "symfony/phpunit-bridge": "~2.7.0"
+    },
+    "suggest": {
+        "symfony/form": "Allows you to use Symfony Form Component integration"
+    },
+    "minimum-stability": "stable",
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.1-dev"
+        }
+    }
+}

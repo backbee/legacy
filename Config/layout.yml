@@ -1,0 +1,8 @@
+# layout configuration
+
+layout:
+    thumbnail:
+        format: png
+        template: img/layouts/template.png
+        clip: [4, 16, 41, 29]
+        background: [194, 194, 194]

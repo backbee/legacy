@@ -1,0 +1,37 @@
+firewalls:
+    rest_api_area:
+        pattern: ^/rest
+        requirements:
+            HTTP-X-API-SIGNATURE: \w+
+            HTTP-X-API-KEY: \w+
+        provider: public_key
+        public_key: ~
+        restful:
+            provider: bb_user
+            nonce_dir: security/nonces
+            lifetime: 1800
+            use_registry: true
+        anonymous: ~
+
+providers:
+    bb_user:
+        entity:
+            class: BackBee\Security\User
+        secret: %secret_key%
+    public_key:
+        entity:
+            class: BackBee\Security\User
+
+contexts:
+    BackBee\Security\Context: [StatelessContext, AnonymousContext, UsernamePasswordContext, LogoutContext, RestfulContext]
+
+encoders:
+    BackBee\Security\User:
+        class: Symfony\Component\Security\Core\Encoder\MessageDigestPasswordEncoder
+        arguments:
+            algorithm: md5
+            encode_as_base64: false
+            iterations: 1
+
+acl:
+    connection: default

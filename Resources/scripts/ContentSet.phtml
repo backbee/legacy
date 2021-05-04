@@ -1,0 +1,17 @@
+<?php $contentwidth = $this->getParam('contentwidth'); ?>
+<div>
+    <?php foreach ($this->getObject() as $content): ?>
+        <?php
+            echo $this->render(
+                $content,
+                $this->getMode(),
+                is_array($contentwidth) && array_key_exists($content->getUid(), $contentwidth)
+                    ? array('class' => $contentwidth[$content->getUid()])
+                    : null
+                ,
+                null,
+                $this->getIgnoreIfNotAvailable()
+            );
+        ?>
+    <?php endforeach; ?>
+</div>

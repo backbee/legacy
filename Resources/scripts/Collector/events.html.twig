@@ -1,0 +1,78 @@
+
+{% from _self import display_listener %}
+
+{% block menu %}
+<span class="label">
+    <span class="icon"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=" alt="Events"></span>
+    <strong>Events</strong>
+</span>
+{% endblock %}
+
+{% block panel %}
+    {% if collector.calledlisteners|length %}
+        {{ block('panelContent') }}
+    {% else %}
+        <h2>Events</h2>
+        <p>
+            <em>No events have been recorded. Are you sure that debugging is enabled in the kernel?</em>
+        </p>
+    {% endif %}
+{% endblock %}
+
+{% block panelContent %}
+    <h2>Called Listeners</h2>
+
+    <table>
+        <tr>
+            <th>Event name</th>
+            <th>Listener</th>
+        </tr>
+        {% for listener in collector.calledlisteners %}
+            <tr>
+                <td><code>{{ listener.event }}</code></td>
+                <td><code>{{ display_listener(listener) }}</code></td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Not Called Listeners</h2>
+
+    {% if collector.notcalledlisteners %}
+        <table>
+            <tr>
+                <th>Event name</th>
+                <th>Listener</th>
+            </tr>
+            {% set listeners = collector.notcalledlisteners %}
+            {% for listener in listeners|keys|sort %}
+                <tr>
+                    <td><code>{{ listeners[listener].event }}</code></td>
+                    <td><code>{{ display_listener(listeners[listener]) }}</code></td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>
+            <strong>No uncalled listeners</strong>.
+        </p>
+        <p>
+
+            All listeners were called for this request or an error occurred
+            when trying to collect uncalled listeners (in which case check the
+            logs to get more information).
+
+        </p>
+    {% endif %}
+{% endblock %}
+
+{% macro display_listener(listener) %}
+    {#{% if listener.type == "Closure" %}
+        Closure
+    {% elseif listener.type == "Function" %}
+        {% set link = listener.file|file_link(listener.line) %}
+        {% if link %}<a href="{{ link }}">{{ listener.function }}</a>{% else %}{{ listener.function }}{% endif %}
+    {% elseif listener.type == "Method" %}
+        {% set link = listener.file|file_link(listener.line) %}
+        {{ listener.class|abbr_class }}::{% if link %}<a href="{{ link }}">{{ listener.method }}</a>{% else %}{{ listener.method }}{% endif %}
+    {% endif %}#}
+{% endmacro %}

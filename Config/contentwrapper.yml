@@ -1,0 +1,5 @@
+# contentwrapper configuration
+
+namespace:    BackBee\ClassContent
+protocol:     bb.class
+adapter:      BackBee\Stream\ClassWrapper\Adapter\Yaml

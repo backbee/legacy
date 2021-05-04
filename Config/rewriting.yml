@@ -1,0 +1,23 @@
+## if true, does not update url of online pages on flush
+preserve-online: true
+
+## if true check for unique computed URL
+preserve-unicity: true
+
+## Rewriting scheme,
+##   available rules:
+##     - _root_      : scheme for root node
+##     - _default_   : default scheme
+##     - _content_   : array of schemes indexed by content classname
+##   available params:
+##     - $parent     : page parent url
+##     - $uid        : page uid
+##     - $title      : the urlized form of the title
+##     - $date       : the creation date formated to YYYYMMDD
+##     - $datetime   : the creation date formated to YYYYMMDDHHII
+##     - $time       : the creation date formated to HHIISS
+##     - $content->x : the urlized form of the 'x' property of content
+##     - $ancestor[x]: the ancestor of level x url
+scheme:
+  _root_   : /
+  _default_: $parent/$title

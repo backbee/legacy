@@ -1,0 +1,133 @@
+classcontent.include:
+    listeners:
+        - [BackBee\ClassContent\Listener\ClassContentListener, onInclude]
+
+classcontent.postload:
+    listeners:
+        - [BackBee\ClassContent\Listener\ClassContentListener, onPostload]
+
+classcontent.update:
+    listeners:
+        - [BackBee\ClassContent\Listener\ClassContentListener, onUpdate]
+
+classcontent.onflush:
+    listeners:
+        - [BackBee\ClassContent\Listener\ClassContentListener, onFlushContent]
+        - [BackBee\ClassContent\Listener\RevisionListener, onFlushContent]
+        - [BackBee\ClassContent\Listener\IndexationListener, onFlushContent]
+        - [@cache.listener, onFlushContent]
+        - [BackBee\Event\Listener\RewritingListener, onFlushContent]
+        - [BackBee\MetaData\Listener\MetaDataListener, onFlushContent, -100]
+
+classcontent.preremove:
+    listeners:
+        - [BackBee\ClassContent\Listener\ClassContentListener, onPreRemove]
+
+classcontent.prerender:
+    listeners:
+        - [BackBee\ClassContent\Listener\RevisionListener, onPrerenderContent]
+        - [@cache.listener, onPreRenderContent]
+
+classcontent.postrender:
+    listeners:
+        - [@cache.listener, onPostRenderContent]
+
+rest.controller.classcontentcontroller.getaction.postcall:
+  listeners:
+    - [BackBee\ClassContent\Listener\ClassContentListener, onPostCall]
+
+element.file.postremove:
+    listeners:
+        - [BackBee\ClassContent\Listener\ClassContentListener, onRemoveElementFile]
+
+nestednode.page.prerender:
+    listeners:
+        - [@cache.listener, onPreRenderPage]
+
+nestednode.section.preupdate:
+     listeners:
+         - [BackBee\Event\Listener\PageListener, onPreUpdate]
+
+nestednode.page.preupdate:
+    listeners:
+        - [BackBee\Event\Listener\PageListener, onPreUpdate]
+        - [BackBee\Workflow\Listener\PageListener, onPreUpdate]
+
+nestednode.page.postrender:
+    listeners:
+        - [@cache.listener, onPostRenderPage]
+
+nestednode.page.onflush:
+    listeners:
+        - [BackBee\Event\Listener\PageListener, onFlushPage]
+        - [BackBee\ClassContent\Listener\IndexationListener, onFlushPage]
+        - [@cache.listener, onFlushPage]
+        - [BackBee\Event\Listener\RewritingListener, onFlushPage]
+        - [BackBee\MetaData\Listener\MetaDataListener, onFlushPage, -100]
+
+site.layout.prepersist:
+    listeners:
+        - [BackBee\Event\Listener\LayoutListener, onBeforeSave]
+
+site.layout.preupdate:
+    listeners:
+        - [BackBee\Event\Listener\LayoutListener, onBeforeSave]
+
+site.layout.postremove:
+    listeners:
+        - [BackBee\Event\Listener\LayoutListener, onAfterRemove]
+
+revision.postload:
+    listeners:
+        - [BackBee\ClassContent\Listener\RevisionListener, onPostLoad]
+
+revision.onflush:
+    listeners:
+        - [BackBee\ClassContent\Listener\RevisionListener, onFlushElementFile]
+
+element.keyword.render:
+    listeners:
+        - [BackBee\Event\Listener\elementListener, onRender]
+
+frontcontroller.request:
+    listeners:
+        - [@rest.listener.body, onRequest]
+
+kernel.request:
+    listeners:
+        - [@profiler.listener, onKernelRequest]
+
+kernel.exception:
+    listeners:
+        - [@rest.listener.exception, onKernelException]
+        - [@exception.listener, onKernelException]
+
+kernel.controller:
+    listeners:
+        - [@rest.listener.param_converter, onKernelController]
+        - [@rest.listener.security, onKernelController]
+        - [@rest.listener.validation, onKernelController]
+        - [@rest.listener.pagination, onKernelController]
+
+kernel.response:
+    listeners:
+        - [@profiler.toolbar.listener, onKernelResponse]
+        - [@profiler.listener, onKernelResponse]
+
+nestednode.page.postload:
+    listeners:
+        - [@nestednode.page_listener, onPostLoad]
+
+service.tagged.config_per_site:
+    listeners:
+        - [@config.configurator, onGetServiceConfig]
+
+bbapplication.init:
+    listeners:
+        - [BackBee\DependencyInjection\Listener\ContainerListener, onApplicationInit, -8000]
+        - [BackBee\ClassContent\Listener\ClassContentListener, onApplicationInit]
+        - [BackBee\Renderer\Listener\TwigListener, onApplicationReady]
+
+bbapplication.stop:
+    listeners:
+        - [BackBee\Bundle\Listener\BundleListener, onApplicationStop]

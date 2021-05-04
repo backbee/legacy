@@ -1,0 +1,26 @@
+#!/usr/bin/env php
+<?php
+
+if (!ini_get('date.timezone')) {
+    ini_set('date.timezone', 'UTC');
+}
+
+foreach (array(__DIR__ . '/../../autoload.php', __DIR__ . '/../vendor/autoload.php', __DIR__ . '/vendor/autoload.php') as $file) {
+    if (file_exists($file)) {
+        require $file;
+        break;
+    }
+}
+
+use BackBee\Console\Console;
+use Symfony\Component\Console\Input\ArgvInput;
+
+$input = new ArgvInput();
+$context = $input->getParameterOption(array('--context', '-c'), null);
+$env = $input->getParameterOption(array('--env', '-e'), null);
+$app = $input->getParameterOption(array('--app', '-a'), 'BackBee\BBApplication');
+
+$bbapp = new $app($context, $env);
+
+$console = new Console($bbapp);
+$console->run($input);

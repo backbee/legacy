@@ -1,0 +1,169 @@
+
+{% block toolbar %}
+    {% set icon %}
+        <img width="20" height="28" alt="Database" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAcCAYAAABh2p9gAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAQRJREFUeNpi/P//PwM1ARMDlcGogZQDlpMnT7pxc3NbA9nhQKxOpL5rQLwJiPeBsI6Ozl+YBOOOHTv+AOllQNwtLS39F2owKYZ/gRq8G4i3ggxEToggWzvc3d2Pk+1lNL4fFAs6ODi8JzdS7mMRVyDVoAMHDsANdAPiOCC+jCQvQKqBQB/BDbwBxK5AHA3E/kB8nKJkA8TMQBwLxaBIKQbi70AvTADSBiSadwFXpCikpKQU8PDwkGTaly9fHFigkaKIJid4584dkiMFFI6jkTJII0WVmpHCAixZQEXWYhDeuXMnyLsVlEQKI45qFBQZ8eRECi4DBaAlDqle/8A48ip6gAADANdQY88Uc0oGAAAAAElFTkSuQmCC" />
+        <span>{{ collector.querycount }}</span>
+        {% if collector.querycount > 0 %}
+            <span>in {{ '%0.2f'|format(collector.time * 1000) }} ms</span>
+        {% endif %}
+        {% if collector.invalidEntityCount > 0 %}
+
+        {% endif %}
+    {% endset %}
+    {% set text %}
+        <div>
+            <b>DB Queries</b>
+            <span>{{ collector.querycount }}</span>
+        </div>
+        <div>
+            <b>Query time</b>
+            <span>{{ '%0.2f'|format(collector.time * 1000) }} ms</span>
+        </div>
+        <div>
+            <b>Invalid entities</b>
+            <span>{{ collector.invalidEntityCount }}</span>
+        </div>
+    {% endset %}
+    {% include '/Profiler/toolbar_item.html.twig' with { 'link': profiler_url } %}
+{% endblock %}
+
+{% block panel %}
+
+    <script type="text/javascript">
+
+        function toggleRunnableQuery(target) {
+            var targetId = target.getAttribute('target-data-id').replace('original-query', ''),
+                targetElement = document.getElementById(target.getAttribute('target-data-id')),
+                elem;
+
+            if (targetElement.style.display != 'block') {
+                targetElement.style.display = 'block';
+                target.innerHTML = 'Hide runnable query';
+
+                document.getElementById('smallcode' + targetId).style.display = 'none';
+                document.getElementById('code' + targetId).style.display = 'none';
+
+                elem = document.getElementById('code' + targetId).parentElement.children[0];
+
+                elem.children[0].style.display = 'inline';
+                elem.children[1].style.display = 'none';
+                elem.children[2].style.display = 'none';
+
+            } else {
+                targetElement.style.display = 'none';
+                target.innerHTML = 'Display runnable query';
+
+                document.getElementById('smallcode' + targetId).style.display = 'inline';
+            }
+        }
+
+    </script>
+
+
+    <h2>Queries</h2>
+
+    {% for connection, queries in collector.queries %}
+        <h3>Connection <em>{{ connection }}</em></h3>
+        {% if queries is empty %}
+            <p>
+                <em>No queries.</em>
+            </p>
+        {% else %}
+            <ol class="alt bb-queries" id="queriesPlaceholder-{{ loop.index }}">
+                {% for i, query in queries %}
+                    <li class="{{ cycle(['odd', 'even'], i) }}" data-extra-info="{{ '%0.2f'|format(query.executionMS * 1000) }}" data-target-id="{{ i }}">
+                        <div style="margin-top: 4px" id="queryNo-{{ i }}-{{ loop.parent.loop.index }}">
+                            <div data-target-id="code-{{ i }}-{{ loop.parent.loop.index }}">
+                                <code id="smallcode-{{ i }}-{{ loop.parent.loop.index }}">
+                                    {{ query.sql|raw }}
+                                </code>
+
+                                <code id="original-query-{{ i }}-{{ loop.parent.loop.index }}" style="display: none;">
+                                    {{ query.sqlInterpolated|raw }}
+                                </code>
+                            </div>
+
+                            <small>
+                                <strong>Parameters</strong>: {{ query.paramsString }} <br />
+                                [<span id="expandParams-{{ i }}-{{ loop.parent.loop.index }}" onclick="toggleRunnableQuery(this);" target-data-id="original-query-{{ i }}-{{ loop.parent.loop.index }}" style="cursor: pointer;">Display runnable query</span>]<br/>
+                                <strong>Time</strong>: {{ '%0.2f'|format(query.executionMS * 1000) }} ms
+                            </small>
+
+                        </div>
+                    </li>
+                {% endfor %}
+            </ol>
+        {% endif %}
+    {% endfor %}
+
+    <h2>Database Connections</h2>
+
+    {% if collector.connections %}
+        {% include '/Profiler/table.html.twig' with {data: collector.connections} only %}
+    {% else %}
+        <p>
+            <em>No connections.</em>
+        </p>
+    {% endif %}
+
+    <h2>Entity Managers</h2>
+
+    {% if collector.managers %}
+        {% include '/Profiler/table.html.twig' with {data: collector.managers} only %}
+    {% else %}
+        <p>
+            <em>No entity managers.</em>
+        </p>
+    {% endif %}
+
+    <h2>Mapping</h2>
+
+    {% for manager, classes in collector.entities %}
+        <h3>Manager <em>{{ manager }}</em></h3>
+        {% if classes is empty %}
+            <p><em>No loaded entities.</em></p>
+        {% else %}
+            <table>
+                <thead>
+                <tr>
+                    <th scope="col">Class</th>
+                    <th scope="col">Mapping errors</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for class in classes %}
+                    <tr>
+                        <td>{{ class }}</td>
+                        <td>
+                            {% if collector.mappingErrors[manager][class] is defined %}
+                                <ul>
+                                    {% for error in collector.mappingErrors[manager][class] %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                Valid
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    {% endfor %}
+
+    <style>
+        .bb-queries h3 {
+            margin-bottom: 0px;
+        }
+
+        .bb-queries code {
+            font-size: 12px;
+            white-space: normal;
+        }
+
+        .bb-queries code pre {
+            padding: 5px;
+        }
+    </style>
+{% endblock %}

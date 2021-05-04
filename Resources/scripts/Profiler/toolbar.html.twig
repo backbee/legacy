@@ -1,0 +1,145 @@
+<div id="bb-profiler-panel">
+
+    <ul class="nav">
+    {% for name, template in templates %}
+        <li class="bb-profiler-block">
+            <a href="#{{ name }}Panel">
+                {{ template.renderblock('toolbar', {
+                    'collector': profile.getCollector(name),
+                    'profiler_url': profiler_url,
+                    'name': name
+                  })
+                }}
+            </a>
+        </li>
+    {% endfor %}
+    </ul>
+
+    <div class="tab-content">
+        {% for name, template in templates %}
+        <div class="tab-pane fade in active" id="{{ name }}Panel">
+            {{ template.renderblock('panel', {
+                'collector': profile.getCollector(name),
+                'profiler_url': profiler_url,
+                'name': name
+              })
+            }}
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="bb-profiler-close">x</div>
+</div>
+
+<style>
+    #bb-profiler-panel{
+        height: 30px;
+        background: #fff;
+        border-top: 1px;
+        background-color: #F7F7F7;
+        font: 11px Verdana,Arial,sans-serif;
+        border-top: 1px solid #ccc;
+        bottom: 0;
+        left: 0;
+        margin: 0;
+        position: fixed;
+        right: 0;
+        text-align: left;
+        z-index: 99999;
+    }
+
+    #bb-profiler-panel.open{
+        height: auto;
+        overflow: scroll;
+    }
+
+    #bb-profiler-panel ul.nav{
+        height: 32px;
+        width: 100%;
+        background: #eee;
+        position: fixed;
+        bottom: 0px;
+    }
+
+    #bb-profiler-panel ul.nav li{
+        float: left;
+    }
+
+    #bb-profiler-panel .tab-content{
+        background: #fff;
+        padding: 10px 20px 10px 32px;
+    }
+
+    #bb-profiler-panel .nav a{
+        padding: 0;
+        padding: 2px 4px;
+    }
+
+    #bb-profiler-panel .nav a{
+        color: black !important;
+        display: block;
+        font-weight: normal;
+        text-decoration: none;
+        margin: 0;
+        padding: 2px 4px;
+        min-width: 20px;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #bb-profiler-panel .nav a:hover{
+        background-color: #fff;
+    }
+
+    #bb-profiler-close {
+        display: block;
+        width: 15px;
+        height: 16px;
+        top: 7px;
+        right: 5px;
+        cursor: pointer;
+        color: #000;
+        text-align: center;
+        line-height: 12px;
+        -webkit-border-radius: 3px;
+        -moz-border-radius: 3px;
+        border-radius: 3px;
+        position: fixed;
+    }
+    #bb-profiler-close:hover {
+        color: #fff;
+        background-color: red;
+    }
+</style>
+
+<script>
+    var panelListLinks = document.querySelectorAll('#bb-profiler-panel ul.nav li a');
+
+    for (i=0; i < panelListLinks.length; i++) {
+        panelListLinks[i].addEventListener('click', function displayPanel() {
+            document.querySelector('#bb-profiler-panel').style.top = "0";
+            document.querySelector('#bb-profiler-panel').classList.add('open');
+        }, false);
+    }
+
+
+    document.querySelector('#bb-profiler-close').addEventListener('click', function hidePanel() {
+        document.querySelector('#bb-profiler-panel').style.display = "none";
+    }, false);
+
+
+    var panelLinks = document.querySelectorAll('#bb-profiler-panel .nav a');
+    for (i=0; i < panelLinks.length; i++) {
+        panelLinks[i].addEventListener('click', function completePanel() {
+            var hash = this.getAttribute('href');
+            var contentPanels = document.querySelectorAll('.tab-content .tab-pane');
+
+            for (i=0; i < contentPanels.length; i++) {
+                contentPanels[i].classList.remove('active');
+            }
+
+            document.querySelector(hash).classList.add('active');
+
+        }, false);
+    }
+</script>

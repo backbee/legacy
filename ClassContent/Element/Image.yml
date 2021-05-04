@@ -1,0 +1,13 @@
+Image:
+  extends: \BackBee\ClassContent\Element\File
+  repository: \BackBee\ClassContent\Repository\Element\ImageRepository
+  traits: [BackBee\ClassContent\Traits\Element\ImageJsonSerializeTrait]
+  properties:
+    name: Image
+    description: An inline image
+    iconized-by: path
+    mime-types-supported: ['image/gif', 'image/jpeg', 'image/png']
+  parameters:
+    width: 50
+    height: ~
+    crop: ~

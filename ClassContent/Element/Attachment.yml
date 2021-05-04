@@ -1,0 +1,9 @@
+Attachment:
+  extends: \BackBee\ClassContent\Element\File
+  properties:
+    name: Attachment
+    description: An attachment
+    iconized-by: ~
+  parameters:
+    mimetype: ~
+    authorized: ~
