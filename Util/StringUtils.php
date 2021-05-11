@@ -284,12 +284,14 @@ class StringUtils
     }
 
     /**
+     * Converts and formats the provided size. It must be in byte unit.
      *
      * @param int $bytes
+     * @param int $roundPrecision
      *
      * @return string
      */
-    public static function formatBytes($bytes, $roundPrecision = 2)
+    public static function formatBytes(int $bytes, int $roundPrecision = 2): string
     {
         $unit = array('b', 'kb', 'mb', 'gb', 'tb', 'pb');
 
