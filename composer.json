@@ -71,9 +71,6 @@
         "jms/metadata": "1.5.1",
         "willdurand/jsonp-callback-validator": "1.1.0"
     },
-    "bin": [
-        "backbee"
-    ],
     "autoload": {
         "psr-4": {
             "BackBee\\": ""
