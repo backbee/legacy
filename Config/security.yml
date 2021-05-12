@@ -17,13 +17,13 @@ providers:
     bb_user:
         entity:
             class: BackBee\Security\User
-        secret: %secret_key%
+        secret: '%secret_key%'
     public_key:
         entity:
             class: BackBee\Security\User
 
 contexts:
-    BackBee\Security\Context: [StatelessContext, AnonymousContext, UsernamePasswordContext, LogoutContext, RestfulContext]
+    BackBee\Security\Context: [ StatelessContext, AnonymousContext, UsernamePasswordContext, LogoutContext, RestfulContext ]
 
 encoders:
     BackBee\Security\User:

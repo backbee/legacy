@@ -14,7 +14,6 @@ classcontent.onflush:
     listeners:
         - [ BackBee\ClassContent\Listener\ClassContentListener, onFlushContent ]
         - [ BackBee\ClassContent\Listener\RevisionListener, onFlushContent ]
-        - [ '@core.log.class_content.listener', onFlushContent ]
         - [ BackBee\ClassContent\Listener\IndexationListener, onFlushContent ]
         - [ '@cache.listener', onFlushContent ]
         - [ BackBee\Event\Listener\RewritingListener, onFlushContent ]
@@ -23,7 +22,6 @@ classcontent.onflush:
 classcontent.preremove:
     listeners:
         - [ BackBee\ClassContent\Listener\ClassContentListener, onPreRemove ]
-        - [ '@core.log.class_content.listener', onPreRemove ]
 
 classcontent.prerender:
     listeners:

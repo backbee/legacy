@@ -1,7 +1,6 @@
 # renderer configuration
-
 bb_scripts_directory:
-    common: %bbapp.base.dir%/Resources/scripts
+    common: '%bbapp.base.dir%/Resources/scripts'
 
 adapter:
     twig:
@@ -12,8 +11,7 @@ adapter:
             cache_dir: ~
     phtml:
         class: BackBee\Renderer\Adapter\phtml
-        config: []
-
+        config: [ ]
 path:
     scriptdir: Templates/scripts
     layoutdir: Layouts

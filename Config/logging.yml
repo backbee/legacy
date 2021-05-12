@@ -1,5 +1,4 @@
 # logger configuration
-
 appender: BackBee\Logging\Appender\File
-logfile: %bbapp.log.dir%/backbee.log
+logfile: '%bbapp.log.dir%/backbee.log'
 level: ERROR

@@ -25,6 +25,8 @@ use BackBee\ApplicationInterface;
 use BackBee\DependencyInjection\Exception\ContainerAlreadyExistsException;
 use BackBee\DependencyInjection\Exception\MissingBootstrapParametersException;
 use BackBee\DependencyInjection\Util\ServiceLoader;
+use BackBee\Logging\DebugStackLogger;
+use BackBee\Logging\Logger;
 use BackBee\Util\Resolver\ConfigDirectory;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
@@ -372,9 +374,9 @@ class ContainerBuilder
      */
     private function loadLoggerDefinition(): void
     {
-        $logger_class = $this->container->getParameter('bbapp.logger.class');
+        $logger_class = Logger::class;
         if (true === $this->container->getParameter('debug')) {
-            $logger_class = $this->container->getParameter('bbapp.logger_debug.class');
+            $logger_class = DebugStackLogger::class;
         }
 
         $this->container->setDefinition('logging', new Definition($logger_class, array(new Reference('bbapp'))));
