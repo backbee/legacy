@@ -25,32 +25,33 @@ use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\TaggedContainerInterface;
 
 /**
- * @category    BackBee
+ * Interface ContainerInterface
  *
- * @copyright   Lp digital system
- * @author      e.chau <eric.chau@lp-digital.fr>
+ * @package BackBee\DependencyInjection
+ *
+ * @author  e.chau <eric.chau@lp-digital.fr>
  */
 interface ContainerInterface extends TaggedContainerInterface
 {
-    const DUMPABLE_SERVICE_TAG = 'dumpable';
+    public const DUMPABLE_SERVICE_TAG = 'dumpable';
 
     /**
-     * @see Symfony\Component\DependencyInjection\ContainerBuilder::setDefinition
+     * @see \Symfony\Component\DependencyInjection\ContainerBuilder::setDefinition
      */
     public function setDefinition($id, Definition $definition);
 
     /**
-     * @see Symfony\Component\DependencyInjection\ContainerBuilder::getDefinition
+     * @see \Symfony\Component\DependencyInjection\ContainerBuilder::getDefinition
      */
     public function getDefinition($id);
 
     /**
-     * @see Symfony\Component\DependencyInjection\ContainerBuilder::hasDefinition
+     * @see \Symfony\Component\DependencyInjection\ContainerBuilder::hasDefinition
      */
     public function hasDefinition($id);
 
     /**
-     * @see Symfony\Component\DependencyInjection\ContainerBuilder::getDefinitions
+     * @see \Symfony\Component\DependencyInjection\ContainerBuilder::getDefinitions
      */
     public function getDefinitions();
 }

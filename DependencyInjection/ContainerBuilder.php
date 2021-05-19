@@ -22,12 +22,14 @@
 namespace BackBee\DependencyInjection;
 
 use BackBee\ApplicationInterface;
+use BackBee\Command\AbstractCommand;
 use BackBee\DependencyInjection\Exception\ContainerAlreadyExistsException;
-use BackBee\DependencyInjection\Exception\MissingBootstrapParametersException;
+use BackBee\DependencyInjection\Exception\MissingParametersContainerDumpException;
 use BackBee\DependencyInjection\Util\ServiceLoader;
 use BackBee\Logging\DebugStackLogger;
 use BackBee\Logging\Logger;
 use BackBee\Util\Resolver\ConfigDirectory;
+use BackBeePlanet\Standalone\StandaloneHelper;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Config\EnvParametersResource;
@@ -137,8 +139,7 @@ class ContainerBuilder
      * @return Container
      *
      * @throws ContainerAlreadyExistsException
-     * @throws Exception\BootstrapFileNotFoundException
-     * @throws MissingBootstrapParametersException
+     * @throws MissingParametersContainerDumpException
      */
     public function getContainer(): Container
     {
@@ -189,32 +190,30 @@ class ContainerBuilder
     /**
      * Hydrate container with bootstrap.yml parameter.
      *
-     * @throws MissingBootstrapParametersException|Exception\BootstrapFileNotFoundException
-     * raises if we are not able to find bootstrap.yml file
+     * @throws MissingParametersContainerDumpException
      */
     private function hydrateContainerWithBootstrapParameters(): void
     {
-        $parameters = (
-        new BootstrapResolver(
-            $this->repository_directory,
-            $this->context,
-            $this->environment
-        )
-        )->getBootstrapParameters();
+        $configFile = StandaloneHelper::configDir() . DIRECTORY_SEPARATOR . 'config.yml';
 
-        $missing_parameters = array();
-        $this->tryAddParameter('debug', $parameters, $missing_parameters);
-        $this->tryAddParameter('bootstrap_filepath', $parameters, $missing_parameters);
-        if (true === array_key_exists('container', $parameters)) {
-            $this->tryAddParameter('dump_directory', $parameters['container'], $missing_parameters, 'container.');
-            $this->tryAddParameter('autogenerate', $parameters['container'], $missing_parameters, 'container.');
-        } else {
-            $missing_parameters[] = 'container.dump_directory';
-            $missing_parameters[] = 'container.autogenerate';
-        }
+        if (file_exists($configFile)) {
+            $config = AbstractCommand::parseYaml('config.yml', [StandaloneHelper::class, 'configDir']);
+            $parameters = $config['parameters'];
+            $parameters['bootstrap_filepath'] = $configFile;
+            $missing_parameters = [];
+            $this->tryAddParameter('debug', $parameters, $missing_parameters);
+            $this->tryAddParameter('bootstrap_filepath', $parameters, $missing_parameters);
+            if (true === array_key_exists('container', $parameters)) {
+                $this->tryAddParameter('dump_directory', $parameters['container'], $missing_parameters, 'container.');
+                $this->tryAddParameter('autogenerate', $parameters['container'], $missing_parameters, 'container.');
+            } else {
+                $missing_parameters[] = 'container.dump_directory';
+                $missing_parameters[] = 'container.autogenerate';
+            }
 
-        if (0 < count($missing_parameters)) {
-            throw new MissingBootstrapParametersException($missing_parameters);
+            if (0 < count($missing_parameters)) {
+                throw new MissingParametersContainerDumpException($missing_parameters);
+            }
         }
     }
 

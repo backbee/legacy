@@ -29,6 +29,8 @@ use BackBee\DependencyInjection\ContainerInterface;
 use BackBee\Routing\RouteCollection;
 use BackBee\Site\Site;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Config\Loader\DelegatingLoader;
+use Symfony\Component\Config\Loader\LoaderInterface;
 
 /**
  * Interface ApplicationInterface
@@ -198,6 +200,11 @@ interface ApplicationInterface
      * @return mixed
      */
     public function registerCommands(Console $console);
+
+    /**
+     * Loads the container configuration.
+     */
+    public function registerContainerConfiguration(LoaderInterface $loader);
 
     /**
      * Get kernel bundles.

@@ -569,7 +569,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
     }
 
     /**
-     * @return LoggerInterface|null
+     * @return LoggerInterface
      */
     public function getLogging(): LoggerInterface
     {
@@ -1029,9 +1029,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
      * Initializes application's dependency injection container.
      *
      * @return void
-     * @throws DependencyInjection\Exception\BootstrapFileNotFoundException
      * @throws DependencyInjection\Exception\ContainerAlreadyExistsException
-     * @throws DependencyInjection\Exception\MissingBootstrapParametersException
      */
     private function initContainer(): void
     {
@@ -1289,10 +1287,20 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
     /**
      * {@inheritDoc}
      */
-    public function registerContainerConfiguration(LoaderInterface $loader): void
+    public function registerContainerConfiguration(LoaderInterface $loader)
     {
-        // Load bundle.yml
-        $loader->load($this->getBBConfigDir() . DIRECTORY_SEPARATOR . 'config.yml');
+        try {
+            $loader->load($this->getBBConfigDir() . DIRECTORY_SEPARATOR . 'config.yml');
+        } catch (Exception $exception) {
+            $this->getLogging()->error(
+                sprintf(
+                    '%s : %s :%s',
+                    __CLASS__,
+                    __FUNCTION__,
+                    $exception->getMessage()
+                )
+            );
+        }
     }
 
     /**
