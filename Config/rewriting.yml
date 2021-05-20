@@ -19,5 +19,5 @@ preserve-unicity: true
 ##     - $content->x : the urlized form of the 'x' property of content
 ##     - $ancestor[x]: the ancestor of level x url
 scheme:
-  _root_   : /
-  _default_: $parent/$title
+    _root_: /
+    _default_: $parent/$title

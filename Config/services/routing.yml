@@ -1,7 +1,4 @@
-
 parameters:
-
-    bbapp.routing.class: BackBee\Routing\RouteCollection
     bbapp.routing.default_protocol: http
     bbapp.routing.image_uri_prefix: images
     bbapp.routing.media_uri_prefix: media
@@ -11,9 +8,8 @@ parameters:
     classcontent_thumbnail.extension: png
 
 services:
-
     routing:
-        class:      %bbapp.routing.class%
-        arguments:  ["@bbapp"]
+        class: BackBee\Routing\RouteCollection
+        arguments: [ "@bbapp" ]
         tags:
             - { name: "dumpable", dispatch_event: false }

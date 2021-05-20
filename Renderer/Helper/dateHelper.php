@@ -46,7 +46,7 @@ class dateHelper extends AbstractHelper
     private function initFormat($format = null)
     {
         if (null === $format) {
-            $configDate = $this->_renderer->getApplication()->getConfig()->getDateConfig();
+            $configDate = $this->_renderer->getApplication()->getContainer()->getParameter('date');
 
             if (is_array($configDate) && array_key_exists('format', $configDate)) {
                 $this->format = $configDate['format'];
@@ -73,7 +73,7 @@ class dateHelper extends AbstractHelper
     private function initTimezone($timezone = null)
     {
         if (null === $timezone) {
-            $config = $this->_renderer->getApplication()->getConfig()->getDateConfig();
+            $config = $this->_renderer->getApplication()->getContainer()->getParameter('date');
             if (is_array($config) && array_key_exists('timezone', $config)) {
                 $this->timezone = $config['timezone'];
             }

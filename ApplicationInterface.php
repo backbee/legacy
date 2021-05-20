@@ -29,6 +29,8 @@ use BackBee\DependencyInjection\ContainerInterface;
 use BackBee\Routing\RouteCollection;
 use BackBee\Site\Site;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Config\Loader\DelegatingLoader;
+use Symfony\Component\Config\Loader\LoaderInterface;
 
 /**
  * Interface ApplicationInterface
@@ -51,7 +53,7 @@ interface ApplicationInterface
     /**
      * @return boolean
      */
-    public function isStarted();
+    public function isStarted(): bool;
 
     /**
      * Stop the current BBApplication instance.
@@ -63,7 +65,7 @@ interface ApplicationInterface
      *
      * @return string
      */
-    public function getContext();
+    public function getContext(): string;
 
     /**
      * Returns the starting context.
@@ -75,88 +77,108 @@ interface ApplicationInterface
     /**
      * @return string
      */
-    public function getBBDir();
+    public function getBBDir(): string;
 
     /**
      * @return string
      */
-    public function getBaseDir();
+    public function getBaseDir(): string;
 
     /**
+     * Get default repository directory path.
+     *
      * @return string
      */
-    public function getBaseRepository();
+    public function getBaseRepository(): string;
 
     /**
+     * Get current repository directory path.
+     *
      * @return string
      */
-    public function getRepository();
+    public function getRepository(): string;
 
     /**
      * @return Config
      */
-    public function getConfig();
+    public function getConfig(): Config;
 
     /**
      * @return string
      */
-    public function getConfigDir();
+    public function getConfigDir(): string;
 
     /**
      * Returns path to Data directory.
      *
      * @return string absolute path to Data directory
      */
-    public function getDataDir();
+    public function getDataDir(): string;
 
     /**
      * Return the resource directories, if undefined, initialized with common resources.
      *
      * @return string[] The resource directories.
      */
-    public function getResourceDir();
+    public function getResourceDir(): array;
 
     /**
-     * Return the classcontent repositories path for this instance.
+     * Return the class content repositories path for this instance.
      *
      * @return string[] The class contents directories
      */
-    public function getClassContentDir();
+    public function getClassContentDir(): array;
+
+    /**
+     * Gets the cache directory.
+     *
+     * @return string The cache directory
+     */
+    public function getCacheDir(): string;
+
+    /**
+     * Gets the log directory.
+     *
+     * @return string The log directory
+     */
+    public function getLogDir(): string;
 
     /**
      * @return FrontController
      */
-    public function getController();
+    public function getController(): FrontController;
 
     /**
      * @return RouteCollection
      */
-    public function getRouting();
+    public function getRouting(): RouteCollection;
 
     /**
      * @return AutoLoader
      */
-    public function getAutoloader();
+    public function getAutoloader(): AutoLoader;
 
     /**
+     * Get container.
+     *
      * @return ContainerInterface
      */
     public function getContainer();
 
     /**
-     * @return boolean
+     * @return bool
      */
-    public function isOverridedConfig();
+    public function isOverridedConfig(): bool;
 
     /**
-     * @return boolean
+     * @return bool
      */
     public function isDebugMode();
 
     /**
-     * @return Site
+     * @return null|Site
      */
-    public function getSite();
+    public function getSite(): ?Site;
 
     /**
      * @return LoggerInterface
@@ -166,12 +188,28 @@ interface ApplicationInterface
     /**
      * Is the BackBee application started as SAPI client?
      *
-     * @return boolean Returns true is application started as SAPI client, false otherwise
+     * @return bool Returns true is application started as SAPI client, false otherwise
      */
-    public function isClientSAPI();
+    public function isClientSAPI(): bool;
 
     /**
+     * Register commands.
+     *
      * @param Console $console
+     *
+     * @return mixed
      */
     public function registerCommands(Console $console);
+
+    /**
+     * Loads the container configuration.
+     */
+    public function registerContainerConfiguration(LoaderInterface $loader);
+
+    /**
+     * Get kernel bundles.
+     *
+     * @return array
+     */
+    public function getKernelBundles(): array;
 }

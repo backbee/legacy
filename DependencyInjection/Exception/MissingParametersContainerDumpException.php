@@ -21,21 +21,27 @@
 
 namespace BackBee\DependencyInjection\Exception;
 
+use BackBee\Exception\BBException;
+
 /**
- * @category    BackBee
+ * Class MissingParametersContainerDumpException
  *
- * @copyright   Lp digital system
- * @author      e.chau <eric.chau@lp-digital.fr>
+ * @package BackBee\DependencyInjection\Exception
+ *
+ * @author  e.chau <eric.chau@lp-digital.fr>
  */
-class MissingParametersContainerDumpException extends \BackBee\Exception\BBException
+class MissingParametersContainerDumpException extends BBException
 {
     /**
      * MissingParametersContainerDumpException's constructor.
      */
-    public function __construct()
+    public function __construct(array $missing_parameters)
     {
         parent::__construct(
-            'The container dump array is missing parameters/services/aliases/services_dump/is_compiled key(s).'
+            sprintf(
+                'The container dump array is missing parameters/services/aliases/services_dump/is_compiled key(s): %s.',
+                implode(', ', $missing_parameters)
+            )
         );
     }
 }

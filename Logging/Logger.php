@@ -233,7 +233,7 @@ class Logger extends DebugStack implements LoggerInterface, SQLLogger
     /**
      * @codeCoverageIgnore
      *
-     * @param type  $message
+     * @param string  $message
      * @param array $context
      */
     public function error($message, array $context = array())
@@ -244,7 +244,7 @@ class Logger extends DebugStack implements LoggerInterface, SQLLogger
     /**
      * @codeCoverageIgnore
      *
-     * @param type  $message
+     * @param string  $message
      * @param array $context
      */
     public function warning($message, array $context = array())
@@ -255,7 +255,7 @@ class Logger extends DebugStack implements LoggerInterface, SQLLogger
     /**
      * @codeCoverageIgnore
      *
-     * @param type  $message
+     * @param string  $message
      * @param array $context
      */
     public function notice($message, array $context = array())
@@ -266,7 +266,7 @@ class Logger extends DebugStack implements LoggerInterface, SQLLogger
     /**
      * @codeCoverageIgnore
      *
-     * @param type  $message
+     * @param string  $message
      * @param array $context
      */
     public function info($message, array $context = array())
@@ -277,7 +277,7 @@ class Logger extends DebugStack implements LoggerInterface, SQLLogger
     /**
      * @codeCoverageIgnore
      *
-     * @param type  $message
+     * @param string  $message
      * @param array $context
      */
     public function debug($message, array $context = array())

@@ -109,7 +109,7 @@ bb.rest.user.get_collection:
 bb.rest.group.get:
     pattern: /rest/{version}/group/{id}
     defaults:
-        _action:     getAction
+        _action: getAction
         _controller: BackBee\Rest\Controller\GroupController
     requirements:
         version: \d+
@@ -119,7 +119,7 @@ bb.rest.group.get:
 bb.rest.group.delete:
     pattern: /rest/{version}/group/{id}
     defaults:
-        _action:     deleteAction
+        _action: deleteAction
         _controller: BackBee\Rest\Controller\GroupController
     requirements:
         version: \d+
@@ -129,7 +129,7 @@ bb.rest.group.delete:
 bb.rest.group.post:
     pattern: /rest/{version}/group
     defaults:
-        _action:     postAction
+        _action: postAction
         _controller: BackBee\Rest\Controller\GroupController
     requirements:
         version: \d+
@@ -138,7 +138,7 @@ bb.rest.group.post:
 bb.rest.group.put:
     pattern: /rest/{version}/group/{id}
     defaults:
-        _action:     putAction
+        _action: putAction
         _controller: BackBee\Rest\Controller\GroupController
     requirements:
         id: \d+
@@ -148,7 +148,7 @@ bb.rest.group.put:
 bb.rest.group.get_collection:
     pattern: /rest/{version}/group
     defaults:
-        _action:     getCollectionAction
+        _action: getCollectionAction
         _controller: BackBee\Rest\Controller\GroupController
     requirements:
         version: \d+
@@ -242,7 +242,7 @@ bb.rest.acl.get_classes:
 bb.rest.acl.page.post:
     pattern: /rest/{version}/acl/{group}/page/{uid}
     defaults:
-        _action:     postPermissionsPageAction
+        _action: postPermissionsPageAction
         _controller: BackBee\Rest\Controller\AclController
     requirements:
         version: \d+
@@ -284,7 +284,7 @@ bb.rest.acl.clear_permissions_page:
 bb.rest.page.get_available_status:
     pattern: /rest/{version}/page/status
     defaults:
-        _action:     getAvailableStatusAction
+        _action: getAvailableStatusAction
         _controller: BackBee\Rest\Controller\PageController
     requirements:
         _method: GET
@@ -292,25 +292,25 @@ bb.rest.page.get_available_status:
 bb.rest.page.get_metadata:
     pattern: /rest/{version}/page/{uid}/metadata
     defaults:
-        _action:     getMetadataAction
+        _action: getMetadataAction
         _controller: BackBee\Rest\Controller\PageController
     requirements:
         uid: \w{32}
         _method: GET
 
 bb.rest.page.get_ancestors:
-  pattern: /rest/{version}/page/{uid}/ancestors
-  defaults:
-    _action: getAncestorsAction
-    _controller: BackBee\Rest\Controller\PageController
-  requirements:
-    uid: \w{32}
-    _method: GET
+    pattern: /rest/{version}/page/{uid}/ancestors
+    defaults:
+        _action: getAncestorsAction
+        _controller: BackBee\Rest\Controller\PageController
+    requirements:
+        uid: \w{32}
+        _method: GET
 
 bb.rest.page.put_metadata:
     pattern: /rest/{version}/page/{uid}/metadata
     defaults:
-        _action:     putMetadataAction
+        _action: putMetadataAction
         _controller: BackBee\Rest\Controller\PageController
     requirements:
         version: \d+
@@ -320,7 +320,7 @@ bb.rest.page.put_metadata:
 bb.rest.page.get_collection:
     pattern: /rest/{version}/page
     defaults:
-        _action:     getCollectionAction
+        _action: getCollectionAction
         _controller: BackBee\Rest\Controller\PageController
     requirements:
         version: \d+
@@ -329,7 +329,7 @@ bb.rest.page.get_collection:
 bb.rest.page.get:
     pattern: /rest/{version}/page/{uid}
     defaults:
-        _action:     getAction
+        _action: getAction
         _controller: BackBee\Rest\Controller\PageController
     requirements:
         version: \d+
@@ -339,7 +339,7 @@ bb.rest.page.get:
 bb.rest.page.post:
     pattern: /rest/{version}/page
     defaults:
-        _action:     postAction
+        _action: postAction
         _controller: BackBee\Rest\Controller\PageController
     requirements:
         version: \d+
@@ -348,7 +348,7 @@ bb.rest.page.post:
 bb.rest.page.clone:
     pattern: /rest/{version}/page/{uid}/clone
     defaults:
-        _action:     cloneAction
+        _action: cloneAction
         _controller: BackBee\Rest\Controller\PageController
     requirements:
         version: \d+
@@ -357,7 +357,7 @@ bb.rest.page.clone:
 bb.rest.page.put:
     pattern: /rest/{version}/page/{uid}
     defaults:
-        _action:     putAction
+        _action: putAction
         _controller: BackBee\Rest\Controller\PageController
     requirements:
         version: \d+
@@ -367,7 +367,7 @@ bb.rest.page.put:
 bb.rest.page.patch:
     pattern: /rest/{version}/page/{uid}
     defaults:
-        _action:     patchAction
+        _action: patchAction
         _controller: BackBee\Rest\Controller\PageController
     requirements:
         version: \d+
@@ -377,7 +377,7 @@ bb.rest.page.patch:
 bb.rest.page.put_collection:
     pattern: /rest/{version}/page
     defaults:
-        _action:     putCollectionAction
+        _action: putCollectionAction
         _controller: BackBee\Rest\Controller\PageController
     requirements:
         version: \d+
@@ -407,7 +407,7 @@ bb.rest.page.get_permissions:
 bb.rest.page.delete_collection:
     pattern: /rest/{version}/page
     defaults:
-        _action:     deleteCollectionAction
+        _action: deleteCollectionAction
         _controller: BackBee\Rest\Controller\PageController
     requirements:
         version: \d+
@@ -780,78 +780,78 @@ bb.media.get_collection:
         _method: GET
 
 bb.media.post:
-  pattern: /rest/{version}/media
-  defaults:
-    _action: postAction
-    _controller: BackBee\Rest\Controller\MediaController
-  requirements:
-    _method: POST
+    pattern: /rest/{version}/media
+    defaults:
+        _action: postAction
+        _controller: BackBee\Rest\Controller\MediaController
+    requirements:
+        _method: POST
 
 bb.media.put:
-  pattern: /rest/{version}/media/{id}
-  defaults:
-    _action: putAction
-    _controller: BackBee\Rest\Controller\MediaController
-  requirements:
-    _method: PUT
+    pattern: /rest/{version}/media/{id}
+    defaults:
+        _action: putAction
+        _controller: BackBee\Rest\Controller\MediaController
+    requirements:
+        _method: PUT
 
 bb.media.delete:
-  pattern: /rest/{version}/media/{id}
-  defaults:
-    _action: deleteAction
-    _controller: BackBee\Rest\Controller\MediaController
-  requirements:
-    _method: DELETE
+    pattern: /rest/{version}/media/{id}
+    defaults:
+        _action: deleteAction
+        _controller: BackBee\Rest\Controller\MediaController
+    requirements:
+        _method: DELETE
 
 bb.media.list:
-  pattern: /rest/{version}/medialist
-  defaults:
-    _action: medialistAction
-    _controller: BackBee\Rest\Controller\MediaController
-  requirements:
-    _method: GET
+    pattern: /rest/{version}/medialist
+    defaults:
+        _action: medialistAction
+        _controller: BackBee\Rest\Controller\MediaController
+    requirements:
+        _method: GET
 
 bb.keyword.get_collection:
-  pattern: /rest/{version}/keyword
-  defaults:
-    _action: getCollectionAction
-    _controller: BackBee\Rest\Controller\KeywordController
-  requirements:
-    _method: GET
+    pattern: /rest/{version}/keyword
+    defaults:
+        _action: getCollectionAction
+        _controller: BackBee\Rest\Controller\KeywordController
+    requirements:
+        _method: GET
 
 bb.keyword.get:
-  pattern: /rest/{version}/keyword/{uid}
-  defaults:
-    _action: getAction
-    _controller: BackBee\Rest\Controller\KeywordController
-  requirements:
-    _method: GET
-    version: \d+
-    uid: \w{32}
+    pattern: /rest/{version}/keyword/{uid}
+    defaults:
+        _action: getAction
+        _controller: BackBee\Rest\Controller\KeywordController
+    requirements:
+        _method: GET
+        version: \d+
+        uid: \w{32}
 
 bb.keyword.post:
-  pattern: /rest/{version}/keyword
-  defaults:
-    _action: postAction
-    _controller: BackBee\Rest\Controller\KeywordController
-  requirements:
-    _method: POST
+    pattern: /rest/{version}/keyword
+    defaults:
+        _action: postAction
+        _controller: BackBee\Rest\Controller\KeywordController
+    requirements:
+        _method: POST
 
 bb.keyword.put:
-  pattern: /rest/{version}/keyword/{uid}
-  defaults:
-    _action: putAction
-    _controller: BackBee\Rest\Controller\KeywordController
-  requirements:
-    _method: PUT
+    pattern: /rest/{version}/keyword/{uid}
+    defaults:
+        _action: putAction
+        _controller: BackBee\Rest\Controller\KeywordController
+    requirements:
+        _method: PUT
 
 bb.keyword.delete:
-  pattern: /rest/{version}/keyword/{uid}
-  defaults:
-    _action: deleteAction
-    _controller: BackBee\Rest\Controller\KeywordController
-  requirements:
-    _method: DELETE
+    pattern: /rest/{version}/keyword/{uid}
+    defaults:
+        _action: deleteAction
+        _controller: BackBee\Rest\Controller\KeywordController
+    requirements:
+        _method: DELETE
 
 bb.rest.keyword.patch:
     pattern: /rest/{version}/keyword/{uid}
@@ -898,7 +898,7 @@ bb.rss:
     pattern: /rss/{uri}
     defaults:
         _action: rssAction
-        uri:     _root_
+        uri: _root_
     requirements:
         uri: .+
 
@@ -907,6 +907,6 @@ default:
     pattern: /{uri}
     defaults:
         _action: defaultAction
-        uri:     _root_
+        uri: _root_
     requirements:
         uri: .+

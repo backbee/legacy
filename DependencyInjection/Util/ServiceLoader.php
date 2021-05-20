@@ -21,19 +21,28 @@
 
 namespace BackBee\DependencyInjection\Util;
 
-use Symfony\Component\Config\FileLocator;
-use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
-use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use BackBee\ApplicationInterface;
 use BackBee\DependencyInjection\Container;
 use BackBee\DependencyInjection\ContainerBuilder;
+use Exception;
+use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Config\Loader\DelegatingLoader;
+use Symfony\Component\Config\Loader\LoaderResolver;
+use Symfony\Component\DependencyInjection\Loader\ClosureLoader;
+use Symfony\Component\DependencyInjection\Loader\IniFileLoader;
+use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
+use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 /**
+ * Class ServiceLoader
+ *
  * Allows to easily load services into container from yml or xml file.
  *
- * @category    BackBee
+ * @package BackBee\DependencyInjection\Util
  *
- * @copyright   Lp digital system
- * @author      e.chau <eric.chau@lp-digital.fr>
+ * @author  e.chau <eric.chau@lp-digital.fr>
+ * @author  Djoudi Bensid <djoudi.bensid@lp-digital.fr>
  */
 class ServiceLoader
 {
@@ -45,13 +54,24 @@ class ServiceLoader
      * @param string|null  $service_filename define the service's filename we want to load,
      *                                       default: ContainerBuilder::SERVICE_FILENAME
      */
-    public static function loadServicesFromYamlFile(Container $container, $dir, $service_filename = null)
+    public static function loadServicesFromYamlFile(Container $container, $dir, $service_filename = null): void
     {
-        if (null === $service_filename) {
-            $service_filename = ContainerBuilder::SERVICE_FILENAME;
-        }
+        try {
+            if (null === $service_filename) {
+                $service_filename = ContainerBuilder::SERVICE_FILENAME;
+            }
 
-        (new YamlFileLoader($container, new FileLocator((array) $dir)))->load($service_filename.'.yml');
+            (new YamlFileLoader($container, new FileLocator((array)$dir)))->load($service_filename . '.yml');
+        } catch (Exception $exception) {
+            $container->get('backbee.logger')->error(
+                sprintf(
+                    '%s : %s : %s',
+                    __CLASS__,
+                    __FUNCTION__,
+                    $exception->getMessage()
+                )
+            );
+        }
     }
 
     /**
@@ -62,12 +82,46 @@ class ServiceLoader
      * @param string|null  $service_filename define the service's filename we want to load,
      *                                       default: ContainerBuilder::SERVICE_FILENAME
      */
-    public static function loadServicesFromXmlFile(Container $container, $dir, $service_filename = null)
+    public static function loadServicesFromXmlFile(Container $container, $dir, $service_filename = null): void
     {
-        if (null === $service_filename) {
-            $service_filename = ContainerBuilder::SERVICE_FILENAME;
-        }
+        try {
+            if (null === $service_filename) {
+                $service_filename = ContainerBuilder::SERVICE_FILENAME;
+            }
 
-        (new XmlFileLoader($container, new FileLocator((array) $dir)))->load($service_filename.'.xml');
+            (new XmlFileLoader($container, new FileLocator((array)$dir)))->load($service_filename . '.xml');
+        } catch (Exception $exception) {
+            $container->get('backbee.logger')->error(
+                sprintf(
+                    '%s : %s : %s',
+                    __CLASS__,
+                    __FUNCTION__,
+                    $exception->getMessage()
+                )
+            );
+        }
+    }
+
+    /**
+     * Returns a loader for the container.
+     *
+     * @return DelegatingLoader The loader
+     */
+    public static function getContainerLoader(
+        ApplicationInterface $application,
+        Container $container
+    ): DelegatingLoader {
+        $locator = new FileLocator($application);
+        $resolver = new LoaderResolver(
+            [
+                new XmlFileLoader($container, $locator),
+                new YamlFileLoader($container, $locator),
+                new IniFileLoader($container, $locator),
+                new PhpFileLoader($container, $locator),
+                new ClosureLoader($container),
+            ]
+        );
+
+        return new DelegatingLoader($resolver);
     }
 }

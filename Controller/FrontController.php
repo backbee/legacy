@@ -106,10 +106,8 @@ class FrontController implements HttpKernelInterface
         $this->application = $application;
 
         if (null !== $application) {
-            if (null !== $parameters_config = $application->getConfig()->getParametersConfig()) {
-                if (true === array_key_exists('force_url_extension', $parameters_config)) {
-                    $this->force_url_extension = $parameters_config['force_url_extension'];
-                }
+            if (null !== $forceUrlExtension = $application->getContainer()->getParameter('force_url_extension')) {
+                $this->force_url_extension = $forceUrlExtension;
             }
 
             if (false === $this->getRouteCollection()->isRestored()) {
@@ -630,8 +628,8 @@ class FrontController implements HttpKernelInterface
      * Handles an exception by trying to convert it to a Response.
      *
      * @param Exception $e       An \Exception instance
-     * @param Request    $request A Request instance
-     * @param integer    $type    The type of the request
+     * @param Request   $request A Request instance
+     * @param integer   $type    The type of the request
      *
      * @return Response A Response instance
      */
