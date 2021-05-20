@@ -55,6 +55,8 @@ use LogicException;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionException;
+use Swift_Mailer;
+use Swift_SmtpTransport;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\Debug\Debug;
 use Symfony\Component\Debug\Exception\ContextErrorException;
@@ -137,14 +139,16 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
     /**
      * BBApplication constructor.
      *
-     * @param null  $context
-     * @param null  $environment
-     * @param false $overwrite_config
+     * @param null $context
+     * @param null $environment
+     * @param bool $overwrite_config
      *
      * @throws BBException
      * @throws ContextErrorException
+     * @throws DependencyInjection\Exception\ContainerAlreadyExistsException
+     * @throws DependencyInjection\Exception\MissingParametersContainerDumpException
      */
-    public function __construct($context = null, $environment = null, $overwrite_config = false)
+    public function __construct($context = null, $environment = null, bool $overwrite_config = false)
     {
         $this->context = $context ?? self::DEFAULT_CONTEXT;
         $this->isInitialized = false;
@@ -238,38 +242,29 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
         }
     }
 
-//    /**
-//     * @return Swift_Mailer
-//     */
-//    public function getMailer()
-//    {
-//        if (!$this->getContainer()->has('mailer') || is_null($this->getContainer()->get('mailer'))) {
-//            if (null !== $mailer_config = $this->getConfig()->getSection('mailer')) {
-//                $smtp = is_array($mailer_config['smtp']) ? reset($mailer_config['smtp']) : $mailer_config['smtp'];
-//                $port = is_array($mailer_config['port']) ? reset($mailer_config['port']) : $mailer_config['port'];
-//                $encryption = !isset($mailer_config['encryption'])
-//                    ? null : (is_array($mailer_config['encryption'])
-//                        ? reset($mailer_config['encryption'])
-//                        : $mailer_config['encryption']);
-//
-//                $transport = Swift_SmtpTransport::newInstance($smtp, $port, $encryption);
-//                if (array_key_exists('username', $mailer_config) && array_key_exists('password', $mailer_config)) {
-//                    $username = is_array($mailer_config['username'])
-//                        ? reset($mailer_config['username'])
-//                        : $mailer_config['username'];
-//                    $password = is_array($mailer_config['password'])
-//                        ? reset($mailer_config['password'])
-//                        : $mailer_config['password'];
-//
-//                    $transport->setUsername($username)->setPassword($password);
-//                }
-//
-//                $this->getContainer()->set('mailer', Swift_Mailer::newInstance($transport));
-//            }
-//        }
-//
-//        return $this->getContainer()->get('mailer');
-//    }
+    /**
+     * Get mailer.
+     *
+     * @return Swift_Mailer
+     */
+    public function getMailer(): Swift_Mailer
+    {
+        if (
+            false === $this->getContainer()->get('mailer') &&
+            ($config = $this->getConfig()->getSection('mailer'))
+        ) {
+            $transport = Swift_SmtpTransport::newInstance(
+                $config['server'] ?? '',
+                $config['port'] ?? '',
+                $config['encryption'] ?? ''
+            );
+
+            $transport->setUsername($config['username'] ?? '')->setPassword($config['password'] ?? '');
+            $this->getContainer()->set('mailer', Swift_Mailer::newInstance($transport));
+        }
+
+        return $this->getContainer()->get('mailer');
+    }
 
     /**
      * {@inheritDoc}
@@ -312,7 +307,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
      *
      * @return array
      */
-    public function getBundles()
+    public function getBundles(): array
     {
         $bundles = [];
         foreach ($this->getContainer()->findTaggedServiceIds('bundle') as $id => $data) {
@@ -323,18 +318,20 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
     }
 
     /**
+     * Start BBApp.
+     *
      * @param Site|null $site
      *
      * @throws Controller\Exception\FrontControllerException
      */
-    public function start(Site $site = null)
+    public function start(Site $site = null): void
     {
         if (null === $this->getEntityManager()) {
             throw new LogicException('Cannot start BackBee without database connection');
         }
 
         if (null === $site) {
-            $site = $this->getEntityManager()->getRepository('BackBee\Site\Site')->findOneBy([]);
+            $site = $this->getEntityManager()->getRepository(Site::class)->findOneBy([]);
         }
 
         if (null !== $site) {
