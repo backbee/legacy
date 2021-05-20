@@ -197,7 +197,7 @@ class ContainerBuilder
     {
         $configFile = StandaloneHelper::configDir() . DIRECTORY_SEPARATOR . 'config.yml';
 
-        if (file_exists($configFile) && readfile($configFile)) {
+        if (file_exists($configFile)) {
             $config = AbstractCommand::parseYaml('config.yml', [StandaloneHelper::class, 'configDir']);
             $parameters = $config['parameters'];
             $parameters['bootstrap_filepath'] = $configFile;
