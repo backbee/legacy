@@ -21,6 +21,7 @@
 
 namespace BackBee;
 
+use App\StandaloneHelper;
 use BackBee\AutoLoader\AutoLoader;
 use BackBee\Cache\CacheInterface;
 use BackBee\Cache\DAO\Cache;
@@ -32,6 +33,7 @@ use BackBee\DependencyInjection\ContainerBuilder;
 use BackBee\DependencyInjection\ContainerInterface;
 use BackBee\DependencyInjection\Dumper\DumpableServiceInterface;
 use BackBee\DependencyInjection\Dumper\DumpableServiceProxyInterface;
+use BackBee\DependencyInjection\Util\ServiceLoader;
 use BackBee\Event\Dispatcher;
 use BackBee\Event\Event;
 use BackBee\Exception\BBException;
@@ -66,7 +68,14 @@ use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Validator\ValidatorInterface;
+use Symfony\Component\Yaml\Yaml;
+use function array_key_exists;
+use function call_user_func_array;
+use function count;
+use function dirname;
+use function in_array;
 use function is_array;
+use function is_string;
 
 /**
  * Class BBApplication
@@ -80,7 +89,7 @@ use function is_array;
  */
 class BBApplication extends Kernel implements ApplicationInterface, DumpableServiceInterface, DumpableServiceProxyInterface
 {
-    public const VERSION = '4.0.1';
+    public const VERSION = '4.2.0';
 
     /**
      * application's context.
@@ -163,14 +172,17 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
 
         try {
             $this->initEntityManager();
-        } catch (Exception $e) {
-            $this->getLogging()->notice('BackBee initialized without EntityManager');
+        } catch (Exception $exception) {
+            $this->getLogging()->notice(
+                sprintf('BackBee initialized without EntityManager: %s', $exception->getMessage())
+            );
         }
 
         $this->initBundles();
+        $this->initializeApp();
 
         if (!$this->getContainer()->has('em')) {
-            $this->debug(
+            $this->getLogging()->debug(
                 sprintf(
                     'BBApplication (v.%s) partial initialization with context `%s`, debugging set to %s',
                     self::VERSION,
@@ -195,7 +207,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
             throw $ex;
         }
 
-        $this->debug(
+        $this->getLogging()->debug(
             sprintf(
                 'BBApplication (v.%s) initialization with context `%s`, debugging set to %s',
                 self::VERSION,
@@ -203,8 +215,8 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
                 var_export($this->debug, true)
             )
         );
-        $this->debug(sprintf('  - Base directory set to `%s`', $this->getBaseDir()));
-        $this->debug(sprintf('  - Repository directory set to `%s`', $this->getRepository()));
+        $this->getLogging()->debug(sprintf('  - Base directory set to `%s`', $this->getBaseDir()));
+        $this->getLogging()->debug(sprintf('  - Repository directory set to `%s`', $this->getRepository()));
 
         $this->isInitialized = true;
 
@@ -530,7 +542,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
      *
      * @return string
      */
-    public function getBBConfigDir()
+    public function getBBConfigDir(): string
     {
         return $this->getBaseRepository() . DIRECTORY_SEPARATOR . 'Config';
     }
@@ -561,9 +573,9 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
     }
 
     /**
-     * @return Dispatcher|null
+     * @return Dispatcher
      */
-    public function getEventDispatcher(): ?Dispatcher
+    public function getEventDispatcher(): Dispatcher
     {
         return $this->getContainer()->get('event.dispatcher');
     }
@@ -586,9 +598,9 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
     }
 
     /**
-     * @return AbstractRenderer|null
+     * @return AbstractRenderer
      */
-    public function getRenderer()
+    public function getRenderer(): AbstractRenderer
     {
         return $this->getContainer()->get('renderer');
     }
@@ -635,7 +647,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
                 array_unshift($this->classcontentDir, $this->getRepository() . '/ClassContent');
             }
 
-            array_map(['BackBee\Util\File\File', 'resolveFilepath'], $this->classcontentDir);
+            array_map([File::class, 'resolveFilepath'], $this->classcontentDir);
         }
 
         return $this->classcontentDir;
@@ -728,7 +740,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
      *
      * @return ApplicationInterface
      */
-    public function pushResourceDir($dir)
+    public function pushResourceDir(string $dir): ApplicationInterface
     {
         File::resolveFilepath($dir);
 
@@ -747,7 +759,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
      *
      * @return ApplicationInterface
      */
-    public function unshiftResourceDir($dir)
+    public function unshiftResourceDir(string $dir): ApplicationInterface
     {
         File::resolveFilepath($dir);
 
@@ -800,7 +812,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
      *
      * @throws BBException Occur when none resource dir is defined
      */
-    public function getCurrentResourceDir()
+    public function getCurrentResourceDir(): string
     {
         $dir = $this->getResourceDir();
 
@@ -823,17 +835,17 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
     }
 
     /**
-     * @return UrlGenerator|null
+     * @return UrlGenerator
      */
-    public function getUrlGenerator()
+    public function getUrlGenerator(): UrlGenerator
     {
         return $this->getContainer()->get('rewriting.urlgenerator');
     }
 
     /**
-     * @return SessionInterface|null The session
+     * @return SessionInterface The session
      */
-    public function getSession()
+    public function getSession(): SessionInterface
     {
         if (null === $this->getRequest()->getSession()) {
             $session = $this->container->get('bb_session');
@@ -844,9 +856,9 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
     }
 
     /**
-     * @return SecurityContext|null
+     * @return SecurityContext
      */
-    public function getSecurityContext()
+    public function getSecurityContext(): SecurityContext
     {
         return $this->getContainer()->get('security.context');
     }
@@ -862,7 +874,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
     /**
      * @return string
      */
-    public function getStorageDir()
+    public function getStorageDir(): string
     {
         if (null === $this->storageDir) {
             $this->storageDir = $this->container->getParameter('bbapp.data.dir') . DIRECTORY_SEPARATOR . 'Storage';
@@ -874,7 +886,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
     /**
      * @return string
      */
-    public function getTemporaryDir()
+    public function getTemporaryDir(): string
     {
         if (null === $this->tmpDir) {
             $this->tmpDir = $this->container->getParameter('bbapp.data.dir') . DIRECTORY_SEPARATOR . 'Tmp';
@@ -1030,6 +1042,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
      *
      * @return void
      * @throws DependencyInjection\Exception\ContainerAlreadyExistsException
+     * @throws DependencyInjection\Exception\MissingParametersContainerDumpException
      */
     private function initContainer(): void
     {
@@ -1124,15 +1137,15 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
 
         AnnotationRegistry::registerLoader(
             function ($classname) {
-                if (0 === strpos($classname, 'BackBee')) {
+                if (0 === strncmp($classname, 'BackBee', 7)) {
                     return class_exists($classname);
                 }
 
-                if (0 === strpos($classname, 'Symfony\Component\Validator\Constraints')) {
+                if (0 === strncmp($classname, 'Symfony\Component\Validator\Constraints', 39)) {
                     return class_exists($classname);
                 }
 
-                if (0 === strpos($classname, 'Swagger\Annotations')) {
+                if (0 === strncmp($classname, 'Swagger\Annotations', 19)) {
                     return class_exists($classname);
                 }
 
@@ -1200,33 +1213,37 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
         $definition->addMethodCall('addEventListener', [$r->getConstants(), new Reference('doctrine.listener')]);
         $this->container->setDefinition('doctrine.event_manager', $definition);
 
-        try {
-            $loggerId = 'logging';
+        $loggerId = 'logging';
 
-            if ($this->isDebugMode()) {
-                // doctrine data collector
-                $this->getContainer()->get('data_collector.doctrine')->addLogger(
-                    'default',
-                    $this->getContainer()->get('doctrine.dbal.logger.profiling')
-                );
-                $loggerId = 'doctrine.dbal.logger.profiling';
-            }
-
-            $definition = new Definition(
-                EntityManager::class,
-                [
-                    $doctrineConfig['dbal'],
-                    new Reference($loggerId),
-                    new Reference('doctrine.event_manager'),
-                    new Reference('service_container'),
-                ]
+        if ($this->isDebugMode()) {
+            // doctrine data collector
+            $this->getContainer()->get('data_collector.doctrine')->addLogger(
+                'default',
+                $this->getContainer()->get('doctrine.dbal.logger.profiling')
             );
+            $loggerId = 'doctrine.dbal.logger.profiling';
+        }
+
+        $definition = new Definition(
+            EntityManager::class,
+            [
+                $doctrineConfig['dbal'],
+                new Reference($loggerId),
+                new Reference('doctrine.event_manager'),
+                new Reference('service_container'),
+            ]
+        );
+
+        try {
+
             $definition->setFactory([EntityManagerCreator::class, 'create']);
             $this->container->setDefinition('em', $definition);
 
-            $this->debug(sprintf('%s(): Doctrine EntityManager initialized', __METHOD__));
+            $this->getLogging()->debug(sprintf('%s(): Doctrine EntityManager initialized', __METHOD__));
         } catch (Exception $exception) {
-            $this->warning(sprintf('%s(): Cannot initialize Doctrine EntityManager', __METHOD__));
+            $this->getLogging()->warning(
+                sprintf('%s(): Cannot initialize Doctrine EntityManager: %s', __METHOD__, $exception->getMessage())
+            );
         }
     }
 
@@ -1272,7 +1289,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
     {
         $error = error_get_last();
         if (null !== $error && in_array($error['type'], [E_ERROR, E_RECOVERABLE_ERROR], true)) {
-            $this->error($error['message']);
+            $this->getLogging()->error($error['message']);
         }
     }
 
@@ -1309,5 +1326,27 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
     public function getKernelBundles(): array
     {
         return $this->bundles;
+    }
+
+    /**
+     * Initialize application.
+     */
+    public function initializeApp(): void
+    {
+        $eventsFilePath = StandaloneHelper::configDir() . DIRECTORY_SEPARATOR . 'events.yml';
+
+        if (is_file($eventsFilePath) && is_readable($eventsFilePath)) {
+            $events = Yaml::parse(file_get_contents($eventsFilePath));
+
+            if (true === is_array($events)) {
+                $this->getEventDispatcher()->addListeners($events);
+            }
+        }
+
+        $serviceFilePath = StandaloneHelper::configDir() . DIRECTORY_SEPARATOR . 'services.yml';
+
+        if (is_file($serviceFilePath) && is_readable($serviceFilePath)) {
+            ServiceLoader::loadServicesFromYamlFile($this->container, StandaloneHelper::configDir());
+        }
     }
 }
