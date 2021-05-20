@@ -21,7 +21,7 @@
 
 namespace BackBee;
 
-use App\StandaloneHelper;
+use App\Helper\StandaloneHelper;
 use BackBee\AutoLoader\AutoLoader;
 use BackBee\Cache\CacheInterface;
 use BackBee\Cache\DAO\Cache;

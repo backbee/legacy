@@ -30,7 +30,7 @@ use BackBee\Logging\DebugStackLogger;
 use BackBee\Logging\Logger;
 use BackBee\Util\Resolver\ConfigDirectory;
 use LogicException;
-use App\StandaloneHelper;
+use App\Helper\StandaloneHelper;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Config\EnvParametersResource;
