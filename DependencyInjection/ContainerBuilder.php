@@ -30,6 +30,7 @@ use BackBee\Logging\DebugStackLogger;
 use BackBee\Logging\Logger;
 use BackBee\Util\Resolver\ConfigDirectory;
 use BackBeePlanet\Standalone\StandaloneHelper;
+use LogicException;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Config\EnvParametersResource;
@@ -149,7 +150,7 @@ class ContainerBuilder
 
         // Construct container
         $this->container = new Container();
-        $this->hydrateContainerWithBootstrapParameters();
+        $this->hydrateContainerWithParameters();
 
         if (false === $this->tryParseContainerDump()) {
             $this->hydrateContainerWithApplicationParameters();
@@ -188,15 +189,15 @@ class ContainerBuilder
     }
 
     /**
-     * Hydrate container with bootstrap.yml parameter.
+     * Hydrate container with parameter.
      *
      * @throws MissingParametersContainerDumpException
      */
-    private function hydrateContainerWithBootstrapParameters(): void
+    private function hydrateContainerWithParameters(): void
     {
         $configFile = StandaloneHelper::configDir() . DIRECTORY_SEPARATOR . 'config.yml';
 
-        if (file_exists($configFile)) {
+        if (file_exists($configFile) && readfile($configFile)) {
             $config = AbstractCommand::parseYaml('config.yml', [StandaloneHelper::class, 'configDir']);
             $parameters = $config['parameters'];
             $parameters['bootstrap_filepath'] = $configFile;
@@ -214,6 +215,11 @@ class ContainerBuilder
             if (0 < count($missing_parameters)) {
                 throw new MissingParametersContainerDumpException($missing_parameters);
             }
+        } else {
+            echo('<p>BackBee could not find composer autoloader. Did you install and run "composer install --no-dev" command?</p>');
+            throw new LogicException(
+                'Could not find autoload.php in vendor/. Did you run "composer install --no-dev"?'
+            );
         }
     }
 
