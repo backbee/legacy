@@ -25,13 +25,14 @@ use BackBee\Event\Event;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
+ * Class PreRequestEvent
+ *
  * Allows to execute logic after call of current request controller's action
  * and before the response is send.
  *
- * @category    BackBee
+ * @package BackBee\Controller\Event
  *
- * @copyright   Lp digital system
- * @author      e.chau <eric.chau@lp-digital.fr>
+ * @author  e.chau <eric.chau@lp-digital.fr>
  */
 class PreRequestEvent extends Event
 {
@@ -50,7 +51,7 @@ class PreRequestEvent extends Event
      *
      * @return Request
      */
-    public function getRequest()
+    public function getRequest(): Request
     {
         return $this->getTarget();
     }

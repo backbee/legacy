@@ -21,6 +21,7 @@
 
 namespace BackBee\Controller;
 
+use Doctrine\ORM\EntityManager;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Form\Extension\HttpFoundation\HttpFoundationExtension;
@@ -119,9 +120,9 @@ class Controller implements ContainerAwareInterface
     }
 
     /**
-     * @return Doctrine\ORM\EntityManager
+     * @return EntityManager
      */
-    public function getEntityManager()
+    public function getEntityManager(): EntityManager
     {
         return $this->application->getEntityManager();
     }
