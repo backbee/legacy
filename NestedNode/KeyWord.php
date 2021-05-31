@@ -48,6 +48,8 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class KeyWord extends AbstractNestedNode implements RenderableInterface, \JsonSerializable
 {
+    public const SOURCE_TYPE = 'tag';
+
     /**
      * Unique identifier of the content.
      *
