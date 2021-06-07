@@ -1030,14 +1030,14 @@ abstract class AbstractClassContent extends AbstractContent
             $properties['cache-lifetime']
         );
 
-        $data = array_merge([
+        return array_merge([
+            'className' => self::getClassnameByContentType($this->getType()),
+            'data' => $this->getData(),
             'defaultOptions' => 0 === count($this->defaultOptions) ? new \ArrayObject() : $this->defaultOptions,
             'properties'     => $properties,
             'image'          => self::JSON_DEFINITION_FORMAT === $format
                 ? $this->getDefaultImageName()
                 : $this->getImageName(),
         ], $data);
-
-        return $data;
     }
 }

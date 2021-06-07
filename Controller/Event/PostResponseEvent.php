@@ -26,12 +26,13 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
+ * Class PostResponseEvent
+ *
  * Allows to execute logic before call of current request controller's action.
  *
- * @category    BackBee
+ * @package BackBee\Controller\Event
  *
- * @copyright   Lp digital system
- * @author      e.chau <eric.chau@lp-digital.fr>
+ * @author  e.chau <eric.chau@lp-digital.fr>
  */
 class PostResponseEvent extends Event
 {
@@ -58,7 +59,7 @@ class PostResponseEvent extends Event
      *
      * @return Response
      */
-    public function getResponse()
+    public function getResponse(): Response
     {
         return $this->getTarget();
     }
@@ -68,7 +69,7 @@ class PostResponseEvent extends Event
      *
      * @return Request
      */
-    public function getRequest()
+    public function getRequest(): Request
     {
         return $this->request;
     }

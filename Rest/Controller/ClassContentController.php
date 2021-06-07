@@ -21,15 +21,6 @@
 
 namespace BackBee\Rest\Controller;
 
-use Doctrine\ORM\Tools\Pagination\Paginator;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
-use Symfony\Component\Validator\Constraints as Assert;
-
 use BackBee\ClassContent\AbstractClassContent;
 use BackBee\ClassContent\Category;
 use BackBee\ClassContent\Exception\InvalidContentTypeException;
@@ -38,6 +29,14 @@ use BackBee\Rest\Patcher\Exception\InvalidOperationSyntaxException;
 use BackBee\Rest\Patcher\Exception\UnauthorizedPatchOperationException;
 use BackBee\Rest\Patcher\OperationSyntaxValidator;
 use BackBee\Rest\Patcher\PatcherInterface;
+use Doctrine\ORM\Tools\Pagination\Paginator;
+use Exception;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 /**
  * ClassContent API Controller.
@@ -89,7 +88,7 @@ class ClassContentController extends AbstractRestController
     {
         $application = $this->getApplication();
         $cache = $application->getContainer()->get('cache.control');
-        $cacheId = md5('classcontent_categories_'.$application->getContext().'_'.$application->getEnvironment());
+        $cacheId = md5('classcontent_categories_' . $application->getContext() . '_' . $application->getEnvironment());
 
         if (!$application->isDebugMode() && false !== $value = $cache->load($cacheId)) {
             $categories = json_decode($value, true);
@@ -135,7 +134,7 @@ class ClassContentController extends AbstractRestController
             $response->setData($data);
         }
 
-        return $this->addContentRangeHeadersToResponse($response, $contents, $start, (boolean) $usePagination);
+        return $this->addContentRangeHeadersToResponse($response, $contents, $start, (boolean)$usePagination);
     }
 
     /**
@@ -151,11 +150,13 @@ class ClassContentController extends AbstractRestController
     public function getCollectionByTypeAction($type, $start, $count)
     {
         $classname = AbstractClassContent::getClassnameByContentType($type);
-        $contents = $this->findContentsByCriteria((array) $classname, $start, $count);
-        $response = $this->createJsonResponse($this->getClassContentManager()->jsonEncodeCollection(
-            $contents,
-            $this->getFormatParam()
-        ));
+        $contents = $this->findContentsByCriteria((array)$classname, $start, $count);
+        $response = $this->createJsonResponse(
+            $this->getClassContentManager()->jsonEncodeCollection(
+                $contents,
+                $this->getFormatParam()
+            )
+        );
 
         return $this->addContentRangeHeadersToResponse($response, $contents, $start);
     }
@@ -187,7 +188,9 @@ class ClassContentController extends AbstractRestController
 
             $mode = $request->query->get('mode', null);
             $response = $this->createResponse(
-                $this->getApplication()->getRenderer()->render($content, $mode), 200, 'text/html'
+                $this->getApplication()->getRenderer()->render($content, $mode),
+                200,
+                'text/html'
             );
         } else {
             $response = $this->createJsonResponse();
@@ -198,68 +201,108 @@ class ClassContentController extends AbstractRestController
     }
 
     /**
-     * Creates classcontent according to provided type.
+     * Creates class content according to provided type.
      *
      * @param string  $type
      * @param Request $request
      *
-     * @return Symfony\Component\HttpFoundation\Response
+     * @return Response
      *
      * @Rest\Security("is_fully_authenticated() & has_role('ROLE_API_USER')")
      */
-    public function postAction($type, Request $request)
+    public function postAction(string $type, Request $request): Response
     {
         $classname = AbstractClassContent::getClassnameByContentType($type);
         $content = new $classname();
         $this->granted('CREATE', $content);
 
-        $this->getEntityManager()->persist($content);
-        $content->setDraft($this->getClassContentManager()->getDraft($content, true));
+        $response = $this->createJsonResponse(
+            $content->jsonSerialize(),
+            Response::HTTP_CREATED,
+            [
+                'BB-RESOURCE-UID' => $content->getUid(),
+                'Location' => $this->getApplication()->getRouting()->getUrlByRouteName(
+                    'bb.rest.classcontent.get',
+                    [
+                        'version' => $request->attributes->get('version'),
+                        'type' => $type,
+                        'uid' => $content->getUid(),
+                    ],
+                    '',
+                    false
+                ),
+            ]
+        );
 
-        $this->getEntityManager()->flush();
-
-        $data = $request->request->all();
-        if (0 < count($data)) {
-            $data = array_merge($data, [
-                'type' => $type,
-                'uid'  => $content->getUid(),
-            ]);
-
-            $this->updateClassContent($type, $data['uid'], $data);
+        try {
+            $this->getEntityManager()->persist($content);
+            $content->setDraft($this->getClassContentManager()->getDraft($content, true));
             $this->getEntityManager()->flush();
+        } catch (Exception $exception) {
+            $response = new JsonResponse(
+                sprintf(
+                    'Unable to post content with error: %s',
+                    $exception->getMessage()
+                ),
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
 
-        return $this->createJsonResponse(null, 201, [
-            'BB-RESOURCE-UID' => $content->getUid(),
-            'Location'        => $this->getApplication()->getRouting()->getUrlByRouteName(
-                'bb.rest.classcontent.get',
-                [
-                    'version' => $request->attributes->get('version'),
-                    'type'    => $type,
-                    'uid'     => $content->getUid(),
-                ],
-                '',
-                false
-            ),
-        ]);
+        $data = $request->request->all();
+
+        if (0 < count($data)) {
+            try {
+                $data = array_merge(
+                    $data,
+                    [
+                        'type' => $type,
+                        'uid' => $content->getUid(),
+                    ]
+                );
+
+                $this->updateClassContent($type, $data['uid'], $data);
+                $this->getEntityManager()->flush();
+            } catch (Exception $exception) {
+                $response = new JsonResponse(
+                    sprintf(
+                        'Unable to post content with error: %s',
+                        $exception->getMessage()
+                    ),
+                    Response::HTTP_INTERNAL_SERVER_ERROR
+                );
+            }
+        }
+
+        return $response;
     }
 
     /**
      * Updates classcontent's elements and parameters.
      *
-     * @param string $type type of the class content (ex: Element/text)
-     * @param string $uid  identifier of the class content
+     * @param string  $type type of the class content (ex: Element/text)
+     * @param string  $uid  identifier of the class content
+     * @param Request $request
      *
-     * @return Symfony\Component\HttpFoundation\JsonResponse
+     * @return JsonResponse
      *
      * @Rest\Security("is_fully_authenticated() & has_role('ROLE_API_USER')")
      */
-    public function putAction($type, $uid, Request $request)
+    public function putAction(string $type, string $uid, Request $request): JsonResponse
     {
-        $this->updateClassContent($type, $uid, $request->request->all());
-        $this->getEntityManager()->flush();
+        try {
+            $content = $this->updateClassContent($type, $uid, $request->request->all());
+            $this->getEntityManager()->flush();
+        } catch (Exception $exception) {
+            return new JsonResponse(
+                sprintf(
+                    'Unable to put content with error: %s',
+                    $exception->getMessage()
+                ),
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
 
-        return $this->createJsonResponse(null, 204);
+        return $this->createJsonResponse($content->jsonSerialize(), Response::HTTP_NO_CONTENT);
     }
 
     /**
@@ -285,24 +328,24 @@ class ClassContentController extends AbstractRestController
                 $this->granted('EDIT', $content);
 
                 $result[] = [
-                    'uid'        => $content->getUid(),
-                    'type'       => $content->getContentType(),
+                    'uid' => $content->getUid(),
+                    'type' => $content->getContentType(),
                     'statusCode' => 200,
-                    'message'    => 'OK',
+                    'message' => 'OK',
                 ];
             } catch (AccessDeniedException $e) {
                 $result[] = [
-                    'uid'        => $data['uid'],
-                    'type'       => $data['type'],
+                    'uid' => $data['uid'],
+                    'type' => $data['type'],
                     'statusCode' => 401,
-                    'message'    => $e->getMessage(),
+                    'message' => $e->getMessage(),
                 ];
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $result[] = [
-                    'uid'        => $data['uid'],
-                    'type'       => $data['type'],
+                    'uid' => $data['uid'],
+                    'type' => $data['type'],
                     'statusCode' => 500,
-                    'message'    => $e->getMessage(),
+                    'message' => $e->getMessage(),
                 ];
             }
         }
@@ -313,24 +356,34 @@ class ClassContentController extends AbstractRestController
     }
 
     /**
-     * delete a classcontent.
+     * Delete a class content.
      *
      * @param string $type type of the class content (ex: Element/text)
      * @param string $uid  identifier of the class content
      *
-     * @return Symfony\Component\HttpFoundation\JsonResponse
+     * @return JsonResponse
      *
      * @Rest\Security("is_fully_authenticated() & has_role('ROLE_API_USER')")
      */
-    public function deleteAction($type, $uid)
+    public function deleteAction(string $type, string $uid): JsonResponse
     {
         $this->granted('DELETE', $content = $this->getClassContentByTypeAndUid($type, $uid));
 
         try {
-            $this->getEntityManager()->getRepository('BackBee\ClassContent\AbstractClassContent')->deleteContent($content);
+            $this->getEntityManager()->getRepository(AbstractClassContent::class)->deleteContent(
+                $content
+            );
             $this->getEntityManager()->flush();
-        } catch (\Exception $e) {
-            throw new BadRequestHttpException("Unable to delete content with type: `$type` and uid: `$uid`");
+        } catch (Exception $exception) {
+            return $this->createJsonResponse(
+                sprintf(
+                    'Unable to delete content with parameters: type: %s and uid: %s. Here is the error: %s',
+                    $type,
+                    $uid,
+                    $exception->getMessage()
+                ),
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
 
         return $this->createJsonResponse(null, 204);
@@ -364,8 +417,7 @@ class ClassContentController extends AbstractRestController
     {
         $contents = $this->getEntityManager()
             ->getRepository('BackBee\ClassContent\Revision')
-            ->getAllDrafts($this->getApplication()->getBBUserToken())
-        ;
+            ->getAllDrafts($this->getApplication()->getBBUserToken());
 
         $contents = $this->sortDraftCollection($contents);
 
@@ -393,10 +445,10 @@ class ClassContentController extends AbstractRestController
     /**
      * Set draft of a content to a specific revision
      *
-     * @param  string  $type    Type of the class content (ex: Element/text)
-     * @param  string  $uid     Unique identifier of the class content
-     * @param  Request $request The current request, parameter `revision` will be
-     *                          looked for. Possible values for `revision` are:
+     * @param string  $type      Type of the class content (ex: Element/text)
+     * @param string  $uid       Unique identifier of the class content
+     * @param Request $request   The current request, parameter `revision` will be
+     *                           looked for. Possible values for `revision` are:
      *                           * negative value: revert to current revision decrease from value.
      *                           * empty value: revert to last committed revision.
      *                           * positive value: revert to specific revision if exists.
@@ -405,7 +457,7 @@ class ClassContentController extends AbstractRestController
      *
      * @Rest\Security("is_fully_authenticated() & has_role('ROLE_API_USER')")
      */
-    public function  patchDraftAction($type, $uid, Request $request)
+    public function patchDraftAction($type, $uid, Request $request)
     {
         $operations = $request->request->all();
         try {
@@ -416,7 +468,7 @@ class ClassContentController extends AbstractRestController
 
         $this->granted('EDIT', $content = $this->getClassContentByTypeAndUid($type, $uid));
 
-        foreach($operations as $operation) {
+        foreach ($operations as $operation) {
             if (
                 PatcherInterface::REPLACE_OPERATION !== $operation['op'] ||
                 '/revision' !== $operation['path']
@@ -424,7 +476,7 @@ class ClassContentController extends AbstractRestController
                 throw new UnauthorizedPatchOperationException($content, $operation['path'], $operation['op']);
             }
 
-            $revision = (int) $operation['value'];
+            $revision = (int)$operation['value'];
             if (0 >= $revision) {
                 $revision += $content->getRevision();
             }
@@ -433,7 +485,9 @@ class ClassContentController extends AbstractRestController
                 $this->getClassContentManager()->revertToRevision($content, $revision);
                 $this->getEntityManager()->flush();
             } catch (\InvalidArgumentException $e) {
-                throw new NotFoundHttpException(sprintf('Unknown revision %d for content %s.', $revision, $content->getObjectIdentifier()), $e);
+                throw new NotFoundHttpException(
+                    sprintf('Unknown revision %d for content %s.', $revision, $content->getObjectIdentifier()), $e
+                );
             }
         }
 
@@ -460,24 +514,24 @@ class ClassContentController extends AbstractRestController
             try {
                 $content = $this->updateClassContentDraft($data['type'], $data['uid'], $data);
                 $result[] = [
-                    'uid'        => $content->getUid(),
-                    'type'       => $content->getContentType(),
+                    'uid' => $content->getUid(),
+                    'type' => $content->getContentType(),
                     'statusCode' => 200,
-                    'message'    => 'OK',
+                    'message' => 'OK',
                 ];
             } catch (AccessDeniedException $e) {
                 $result[] = [
-                    'uid'        => $data['uid'],
-                    'type'       => $data['type'],
+                    'uid' => $data['uid'],
+                    'type' => $data['type'],
                     'statusCode' => 401,
-                    'message'    => $e->getMessage(),
+                    'message' => $e->getMessage(),
                 ];
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $result[] = [
-                    'uid'        => $data['uid'],
-                    'type'       => $data['type'],
+                    'uid' => $data['uid'],
+                    'type' => $data['type'],
                     'statusCode' => 500,
-                    'message'    => $e->getMessage(),
+                    'message' => $e->getMessage(),
                 ];
             }
         }
@@ -506,8 +560,7 @@ class ClassContentController extends AbstractRestController
     {
         if (null === $this->manager) {
             $this->manager = $this->getApplication()->getContainer()->get('classcontent.manager')
-                ->setBBUserToken($this->getApplication()->getBBUserToken())
-            ;
+                ->setBBUserToken($this->getApplication()->getBBUserToken());
         }
 
         return $this->manager;
@@ -636,7 +689,7 @@ class ClassContentController extends AbstractRestController
     /**
      * Returns classcontent by category.
      *
-     * @param string  $name  category's name
+     * @param string  $name category's name
      * @param integer $start
      * @param integer $count
      *
@@ -676,7 +729,9 @@ class ClassContentController extends AbstractRestController
     {
         $application = $this->getApplication();
         $cache = $application->getContainer()->get('cache.control');
-        $cacheId = md5('classcontent_definitions_'.$application->getContext().'_'.$application->getEnvironment(). $name);
+        $cacheId = md5(
+            'classcontent_definitions_' . $application->getContext() . '_' . $application->getEnvironment() . $name
+        );
 
         if (!$application->isDebugMode() && false !== $value = $cache->load($cacheId)) {
             $definitions = json_decode($value, true);
@@ -713,16 +768,19 @@ class ClassContentController extends AbstractRestController
      */
     private function findContentsByCriteria(array $classnames, $start, $count)
     {
-        $criterias = array_merge([
-            'only_online' => false,
-            'site_uid'    => $this->getApplication()->getSite()->getUid(),
-        ], $this->getRequest()->query->all());
+        $criterias = array_merge(
+            [
+                'only_online' => false,
+                'site_uid' => $this->getApplication()->getSite()->getUid(),
+            ],
+            $this->getRequest()->query->all()
+        );
 
-        $criterias['only_online'] = (boolean) $criterias['only_online'];
-        $preserveOrder = isset($criterias['preserve_order']) ? (boolean) $criterias['preserve_order'] : false;
+        $criterias['only_online'] = (boolean)$criterias['only_online'];
+        $preserveOrder = isset($criterias['preserve_order']) ? (boolean)$criterias['preserve_order'] : false;
 
         $order_infos = [
-            'column'    => isset($criterias['order_by']) ? $criterias['order_by'] : '_modified',
+            'column' => isset($criterias['order_by']) ? $criterias['order_by'] : '_modified',
             'direction' => isset($criterias['order_direction']) ? $criterias['order_direction'] : 'desc',
         ];
 
@@ -738,8 +796,7 @@ class ClassContentController extends AbstractRestController
 
         $contents = $this->getEntityManager()
             ->getRepository('BackBee\ClassContent\AbstractClassContent')
-            ->findContentsBySearch($classnames, $order_infos, $pagination, $criterias)
-        ;
+            ->findContentsBySearch($classnames, $order_infos, $pagination, $criterias);
 
         if ($preserveOrder === true) {
             $contents = $this->sortByUids($criterias['contentIds'], $contents);
@@ -765,8 +822,7 @@ class ClassContentController extends AbstractRestController
         $queryParamsKey = array_keys($this->getRequest()->query->all());
         $format = ($collection = array_intersect($validFormats, $queryParamsKey))
             ? array_shift($collection)
-            : $validFormats[AbstractClassContent::JSON_DEFAULT_FORMAT]
-        ;
+            : $validFormats[AbstractClassContent::JSON_DEFAULT_FORMAT];
 
         return AbstractClassContent::$jsonFormats[$format];
     }
@@ -793,21 +849,21 @@ class ClassContentController extends AbstractRestController
 
         $lastResult = $start + $resultCount - 1;
         $lastResult = $lastResult < 0 ? 0 : $lastResult;
-        $response->headers->set('Content-Range', "$start-$lastResult/".$total);
+        $response->headers->set('Content-Range', "$start-$lastResult/" . $total);
 
         return $response;
     }
 
     /**
-     * @api {get} /classcontent/:group/permissions Get permissions (ACL)
-     * @apiName getPermissionsAction
-     * @apiGroup ClassContent
-     * @apiVersion 0.2.0
+     * @api               {get} /classcontent/:group/permissions Get permissions (ACL)
+     * @apiName           getPermissionsAction
+     * @apiGroup          ClassContent
+     * @apiVersion        0.2.0
      *
-     * @apiPermission ROLE_API_USER
+     * @apiPermission     ROLE_API_USER
      *
-     * @apiError NoAccessRight Invalid authentication information.
-     * @apiError GroupNotFound No <strong>BackBee\\Security\\Group</strong> exists with uid <code>group</code>.
+     * @apiError          NoAccessRight Invalid authentication information.
+     * @apiError          GroupNotFound No <strong>BackBee\\Security\\Group</strong> exists with uid <code>group</code>.
      *
      * @apiHeader {String} X-API-KEY User's public key.
      * @apiHeader {String} X-API-SIGNATURE Api signature generated for the request.
@@ -852,6 +908,7 @@ class ClassContentController extends AbstractRestController
      * @Rest\Security("is_fully_authenticated() & has_role('ROLE_API_USER')")
      *
      * @param Request $request
+     *
      * @return JsonResponse
      */
     public function getPermissionsAction(Request $request)
@@ -862,14 +919,14 @@ class ClassContentController extends AbstractRestController
 
         $categories['parent'] = [
             'class' => $parentClass,
-            'rights' => $aclManager->getPermissions($parentClass, $group)
+            'rights' => $aclManager->getPermissions($parentClass, $group),
         ];
 
         $allClassContentClassNames = $this->getClassContentManager()->getAllClassContentClassnames();
 
         foreach ($this->getCategoryManager()->getCategories() as $id => $category) {
 
-            foreach($category->getBlocks() as $key => $block){
+            foreach ($category->getBlocks() as $key => $block) {
 
                 $className = AbstractClassContent::getClassnameByContentType($block->type);
                 $block->rights = $aclManager->getPermissions($className, $group);
@@ -878,7 +935,7 @@ class ClassContentController extends AbstractRestController
                 $allClassContentClassNames = array_diff($allClassContentClassNames, [$className]);
             }
 
-            if(false === empty($category->getBlocks())) {
+            if (false === empty($category->getBlocks())) {
 
                 $categories['objects'][] = array_merge(['id' => $id], $category->jsonSerialize());
             }
@@ -890,9 +947,9 @@ class ClassContentController extends AbstractRestController
 
             $content = new $class();
 
-            if(false === $content->isElementContent()){
+            if (false === $content->isElementContent()) {
 
-                if(null === $content->getProperty('name')){
+                if (null === $content->getProperty('name')) {
 
                     $content->setProperty('name', $content->getContentType());
                 }
