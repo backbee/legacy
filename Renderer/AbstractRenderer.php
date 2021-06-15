@@ -498,15 +498,28 @@ abstract class AbstractRenderer implements RendererInterface
      * Returns $pathinfo with base url of current page
      * If $site is provided, the url will be pointing on the associate domain.
      *
-     * @param string             $pathinfo
-     * @param string             $defaultExt
-     * @param \BackBee\Site\Site $site
+     * @param null      $pathinfo
+     * @param null      $defaultExt
+     * @param Site|null $site
+     * @param null      $url_type
+     * @param bool      $addDefaultExtension
      *
      * @return string
      */
-    public function getUri($pathinfo = null, $defaultExt = null, Site $site = null, $url_type = null)
-    {
-        return $this->getApplication()->getRouting()->getUri($pathinfo, $defaultExt, $site, $url_type);
+    public function getUri(
+        $pathinfo = null,
+        $defaultExt = null,
+        Site $site = null,
+        $url_type = null,
+        bool $addDefaultExtension = true
+    ): string {
+        return $this->getApplication()->getRouting()->getUri(
+            $pathinfo,
+            $defaultExt,
+            $site,
+            $url_type,
+            $addDefaultExtension
+        );
     }
 
     public function getRelativeUrl($uri)

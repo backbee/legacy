@@ -27,10 +27,9 @@ use BackBee\DependencyInjection\Dumper\DumpableServiceInterface;
 use BackBee\DependencyInjection\Dumper\DumpableServiceProxyInterface;
 use BackBee\Site\Site;
 use BackBee\Util\File\File;
-
 use Psr\Log\LoggerInterface;
-
 use Symfony\Component\Routing\RouteCollection as sfRouteCollection;
+use function array_key_exists;
 
 /**
  * A RouteCollection represents a set of Route instances.
@@ -88,6 +87,7 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
 
     /**
      * Is the collection restored?
+     *
      * @var boolean
      */
     private $isRestored;
@@ -108,8 +108,8 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
         $this->defaultScheme = '';
 
         if (
-                null !== $this->application &&
-                null !== $container = $this->application->getContainer()
+            null !== $this->application &&
+            null !== $container = $this->application->getContainer()
         ) {
             $this->readFromContainer($container);
         }
@@ -122,10 +122,22 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
      */
     private function readFromContainer(ContainerInterface $container)
     {
-        $this->setValueIfParameterExists($container, $this->uriPrefixes[self::IMAGE_URL], 'bbapp.routing.image_uri_prefix')
-                ->setValueIfParameterExists($container, $this->uriPrefixes[self::MEDIA_URL], 'bbapp.routing.media_uri_prefix')
-                ->setValueIfParameterExists($container, $this->uriPrefixes[self::RESOURCE_URL], 'bbapp.routing.resource_uri_prefix')
-                ->setValueIfParameterExists($container, $this->defaultScheme, 'bbapp.routing.default_protocol');
+        $this->setValueIfParameterExists(
+            $container,
+            $this->uriPrefixes[self::IMAGE_URL],
+            'bbapp.routing.image_uri_prefix'
+        )
+            ->setValueIfParameterExists(
+                $container,
+                $this->uriPrefixes[self::MEDIA_URL],
+                'bbapp.routing.media_uri_prefix'
+            )
+            ->setValueIfParameterExists(
+                $container,
+                $this->uriPrefixes[self::RESOURCE_URL],
+                'bbapp.routing.resource_uri_prefix'
+            )
+            ->setValueIfParameterExists($container, $this->defaultScheme, 'bbapp.routing.default_protocol');
 
         if (null === $this->logger && $container->has('lo')) {
             $this->logger = $container->get('logging');
@@ -186,7 +198,7 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
     /**
      * Returns the path associated to a route.
      *
-     * @param  string $name The name of the route to look for.
+     * @param string $name The name of the route to look for.
      *
      * @return string|null     The path of the route if found, null otherwise.
      */
@@ -203,31 +215,37 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
      * Returns complete url which match with routeName and routeParams; you can also customize
      * the base url; by default it use current site base url.
      *
-     * @param  string      $name       The name of the route to look for.
-     * @param  array|null  $params     Optional, parameters to apply to the route.
-     * @param  string|null $baseUrl    Optional, base URL to use rather than the computed one.
-     * @param  boolean     $addExt     If true adds the default extension to result.
-     * @param  Site|null   $site       Optional, the site for which the uri will be built.
-     * @param  boolean     $buildQuery If true, adds unused parameters in querystring
+     * @param string      $name       The name of the route to look for.
+     * @param array|null  $params     Optional, parameters to apply to the route.
+     * @param string|null $baseUrl    Optional, base URL to use rather than the computed one.
+     * @param boolean     $addExt     If true adds the default extension to result.
+     * @param Site|null   $site       Optional, the site for which the uri will be built.
+     * @param boolean     $buildQuery If true, adds unused parameters in querystring
      *
      * @return string                  The computed URL.
      */
-    public function getUrlByRouteName($name, array $params = null, $baseUrl = null, $addExt = true, Site $site = null, $buildQuery = false)
-    {
+    public function getUrlByRouteName(
+        $name,
+        array $params = null,
+        $baseUrl = null,
+        $addExt = true,
+        Site $site = null,
+        $buildQuery = false
+    ) {
         $paramsToAdd = [];
         $uri = $this->applyRouteParameters(
-                $this->getRoutePath($name),
-                (array) $params,
-                $paramsToAdd
+            $this->getRoutePath($name),
+            (array)$params,
+            $paramsToAdd
         );
 
-        $path = $this->getUri($baseUrl.$uri, null, $site);
+        $path = $this->getUri($baseUrl . $uri, null, $site);
         if (true !== $addExt) {
             $path = File::removeExtension($path);
         }
 
         if (!empty($paramsToAdd) && true === $buildQuery) {
-            $path = $path.'?'.http_build_query($paramsToAdd);
+            $path = $path . '?' . http_build_query($paramsToAdd);
         }
 
         return $path;
@@ -236,9 +254,9 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
     /**
      * Applies parameters to route pattern.
      *
-     * @param  string $uri              The route pattern.
-     * @param  array  $parameters       An array of parameters to apply.
-     * @param  array  $additionalParams Optional, the parameters to found in the pattern.
+     * @param string $uri              The route pattern.
+     * @param array  $parameters       An array of parameters to apply.
+     * @param array  $additionalParams Optional, the parameters to found in the pattern.
      *
      * @return string                   The route uri modified.
      */
@@ -248,7 +266,7 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
 
         foreach ($parameters as $key => $value) {
             $count = 0;
-            $result = str_replace('{'.$key.'}', $value, $result, $count);
+            $result = str_replace('{' . $key . '}', $value, $result, $count);
 
             if (0 === $count) {
                 $additionalParams[$key] = $value;
@@ -262,28 +280,33 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
      * Returns $pathinfo with base url of current page
      * If $site is provided, the url will be pointing on the associate domain.
      *
-     * @param  string      $pathinfo  The pathinfo to treate.
-     * @param  string|null $extension Optional, the extension to add to URI.
-     * @param  Site|null   $site      Optional, the site for which the uri will be built.
-     * @param  int|null    $urlType   Optional, the URL prefix to use.
+     * @param string      $pathinfo  The pathinfo to treate.
+     * @param string|null $extension Optional, the extension to add to URI.
+     * @param Site|null   $site      Optional, the site for which the uri will be built.
+     * @param int|null    $urlType   Optional, the URL prefix to use.
      *
      * @return string                 The URI computed.
      */
-    public function getUri($pathinfo = '', $extension = null, Site $site = null, $urlType = null)
-    {
+    public function getUri(
+        string $pathinfo = '',
+        ?string $extension = null,
+        Site $site = null,
+        ?int $urlType = null,
+        bool $addDefaultExtension = true
+    ): string {
         // if scheme already provided, returns pathinfo
         if (parse_url($pathinfo, PHP_URL_SCHEME)) {
             return $pathinfo;
         }
 
         // ensure $pathinfo is absolute
-        if ('/' !== substr($pathinfo, 0, 1)) {
-            $pathinfo = '/'.$pathinfo;
+        if (strncmp($pathinfo, '/', 1) !== 0) {
+            $pathinfo = '/' . $pathinfo;
         }
 
         // prefixes $pathinfo if needed
-        if (array_key_exists((int) $urlType, $this->uriPrefixes)) {
-            $pathinfo = '/'.$this->uriPrefixes[(int) $urlType].$pathinfo;
+        if (array_key_exists((int)$urlType, $this->uriPrefixes)) {
+            $pathinfo = '/' . $this->uriPrefixes[(int)$urlType] . $pathinfo;
         }
 
         if (null === $site && $this->hasRequestAvailable()) {
@@ -292,7 +315,7 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
             $pathinfo = $this->getUriForSite($pathinfo, $site);
         }
 
-        return $this->getDefaultExtFromSite($pathinfo, $extension, $site);
+        return $this->getDefaultExtFromSite($pathinfo, $extension, $site, $addDefaultExtension);
     }
 
     /**
@@ -318,6 +341,7 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
     {
         if (!isset($dump['routes'])) {
             $this->log('warning', 'No routes found when restoring collection.');
+
             return;
         }
 
@@ -349,9 +373,9 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
         $this->rawRoutes[$name] = $route;
 
         $newRoute = new Route(
-                $route['pattern'],
-                $route['defaults'],
-                array_key_exists('requirements', $route) ? $route['requirements'] : []
+            $route['pattern'],
+            $route['defaults'],
+            array_key_exists('requirements', $route) ? $route['requirements'] : []
         );
 
         $this->add($name, $newRoute);
@@ -374,7 +398,7 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
     /**
      * Returns URI from pathinfo according to current request BaseUrl().
      *
-     * @param  string $pathinfo The pathinfo to treate.
+     * @param string $pathinfo The pathinfo to treate.
      *
      * @return string           The computed URI.
      */
@@ -383,8 +407,8 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
         $request = $this->application->getRequest();
         if (basename($request->getBaseUrl()) === basename($request->server->get('SCRIPT_NAME'))) {
             return $request->getSchemeAndHttpHost()
-                    . substr($request->getBaseUrl(), 0, -1 * (1 + strlen(basename($request->getBaseUrl()))))
-                    . $pathinfo;
+                . substr($request->getBaseUrl(), 0, -1 * (1 + strlen(basename($request->getBaseUrl()))))
+                . $pathinfo;
         } else {
             return $request->getUriForPath($pathinfo);
         }
@@ -407,8 +431,8 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
     /**
      * Returns URI from pathinfo according to site to be reached.
      *
-     * @param  string    $pathinfo The pathinfo to treate.
-     * @param  Site|null $site     Optional, the site to care of, if null get the current site.
+     * @param string    $pathinfo The pathinfo to treate.
+     * @param Site|null $site     Optional, the site to care of, if null get the current site.
      *
      * @return string               The computed URI.
      */
@@ -421,8 +445,8 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
 
         $protocol = '';
         if (null === parse_url($siteUsed->getServerName(), PHP_URL_SCHEME)) {
-            $protocol = (string) $this->defaultScheme;
-            $protocol = $protocol . ($protocol ? ':' : '') . '//';
+            $protocol = $this->defaultScheme;
+            $protocol .= ($protocol ? ':' : '') . '//';
         }
 
         return $protocol . $siteUsed->getServerName() . $pathinfo;
@@ -431,31 +455,36 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
     /**
      * Adds the extension provided, pr the default one for a site.
      *
-     * @param  string      $pathinfo  The pathinfo to change.
-     * @param  string|null $extension Optional, the extention to add.
-     * @param  Site|null   $site      Optional, the site from which the default extension will be got.
+     * @param string      $pathinfo  The pathinfo to change.
+     * @param string|null $extension Optional, the extention to add.
+     * @param Site|null   $site      Optional, the site from which the default extension will be got.
+     * @param bool        $addDefaultExtension
      *
      * @return string                 The pathinfo with the extension added.
      */
-    private function getDefaultExtFromSite($pathinfo, $extension = null, Site $site = null)
-    {
-        if (strpos(basename($pathinfo), '.') || '/' === substr($pathinfo, -1)) {
+    private function getDefaultExtFromSite(
+        string $pathinfo,
+        ?string $extension = null,
+        Site $site = null,
+        bool $addDefaultExtension = true
+    ): string {
+        if ('/' === substr($pathinfo, -1) || strpos(basename($pathinfo), '.')) {
             return $pathinfo;
         }
 
         $siteUsed = $this->getCurrentSite($site);
         $addExtension = $extension;
-        if (null === $addExtension && null !== $siteUsed) {
+        if (null === $addExtension && null !== $siteUsed && $addDefaultExtension === true) {
             $addExtension = $siteUsed->getDefaultExtension();
         }
 
-        return $pathinfo.$addExtension;
+        return $pathinfo . $addExtension;
     }
 
     /**
      * Returns the current site if defined.
      *
-     * @param  Site|null $site Optional, if provided, will be return.
+     * @param Site|null $site Optional, if provided, will be return.
      *
      * @return Site|null
      */
