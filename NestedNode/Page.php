@@ -70,54 +70,56 @@ use BackBee\Workflow\State;
  */
 class Page extends AbstractObjectIdentifiable implements RenderableInterface, DomainObjectInterface
 {
+    public const SOURCE_TYPE = 'page';
+
     /**
      * State off-line: the page can not be displayed on the website.
      *
      * @var int
      */
-    const STATE_OFFLINE = 0;
+    public const STATE_OFFLINE = 0;
 
     /**
      * State on-line: the page can be displayed on the website.
      *
      * @var int
      */
-    const STATE_ONLINE = 1;
+    public const STATE_ONLINE = 1;
 
     /**
      * State hidden: the page can not appeared in menus.
      *
      * @var int
      */
-    const STATE_HIDDEN = 2;
+    public const STATE_HIDDEN = 2;
 
     /**
      * State deleted: the page does not appear in the tree of the website.
      *
      * @var int
      */
-    const STATE_DELETED = 4;
+    public const STATE_DELETED = 4;
 
     /**
      * Type static: thez page is an stored and managed entity.
      *
      * @var int
      */
-    const TYPE_STATIC = 1;
+    public const TYPE_STATIC = 1;
 
     /**
      * Type dynamic: the page is not a managed entity.
      *
      * @var int
      */
-    const TYPE_DYNAMIC = 2;
+    public const TYPE_DYNAMIC = 2;
 
     /**
      * Default target if redirect is defined.
      *
      * @var string
      */
-    const DEFAULT_TARGET = '_self';
+    public const DEFAULT_TARGET = '_self';
 
     /**
      * Unique identifier of the page.
