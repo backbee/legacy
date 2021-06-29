@@ -309,15 +309,17 @@ class Renderer extends AbstractRenderer implements DumpableServiceInterface, Dum
     }
 
     /**
-     * @see BackBee\Renderer\RendererInterface::partial()
+     * @see \BackBee\Renderer\RendererInterface::partial()
      */
-    public function partial($template = null, $params = null)
+    public function partial($template = null, $params = null): string
     {
         $this->templateFile = $template;
         File::resolveFilepath($this->templateFile, null, array('include_path' => $this->_scriptdir));
         if (!is_file($this->templateFile) || !is_readable($this->templateFile)) {
             throw new RendererException(sprintf(
-                'Unable to find file \'%s\' in path (%s)', $template, implode(', ', $this->_scriptdir)
+                'Unable to find file \'%s\' in path (%s)',
+                $template,
+                implode(', ', $this->_scriptdir)
             ), RendererException::SCRIPTFILE_ERROR);
         }
 
@@ -483,7 +485,9 @@ class Renderer extends AbstractRenderer implements DumpableServiceInterface, Dum
 
         if (null === $adapter) {
             throw new RendererException(sprintf(
-                'Unable to manage file \'%s\' in path (%s)', $layoutFile, $this->_layoutdir[0]
+                'Unable to manage file \'%s\' in path (%s)',
+                $layoutFile,
+                $this->_layoutdir[0]
             ), RendererException::SCRIPTFILE_ERROR);
         }
 
@@ -611,7 +615,7 @@ class Renderer extends AbstractRenderer implements DumpableServiceInterface, Dum
 
             if (0 === count($extensions)) {
                 throw new RendererException(
-                        'Declared adapter(s) (count:'.$this->rendererAdapters->count().') is/are not able to manage '.
+                    'Declared adapter(s) (count:'.$this->rendererAdapters->count().') is/are not able to manage '.
                         'any file extensions at moment.'
                 );
             }
@@ -869,7 +873,8 @@ class Renderer extends AbstractRenderer implements DumpableServiceInterface, Dum
 
         if (!$this->isValidTemplateFile($this->templateFile, true)) {
             throw new RendererException(
-                sprintf('Unable to read layout %s.', $this->templateFile), RendererException::LAYOUT_ERROR
+                sprintf('Unable to read layout %s.', $this->templateFile),
+                RendererException::LAYOUT_ERROR
             );
         }
 
@@ -906,7 +911,9 @@ class Renderer extends AbstractRenderer implements DumpableServiceInterface, Dum
 
             if (false === $this->isValidTemplateFile($this->templateFile)) {
                 throw new RendererException(sprintf(
-                        'Unable to find file \'%s\' in path (%s)', $template, implode(', ', $this->_scriptdir)
+                    'Unable to find file \'%s\' in path (%s)',
+                    $template,
+                    implode(', ', $this->_scriptdir)
                 ), RendererException::SCRIPTFILE_ERROR);
             }
         } catch (RendererException $e) {
@@ -920,7 +927,11 @@ class Renderer extends AbstractRenderer implements DumpableServiceInterface, Dum
                     foreach ($subcontents as $sc) {
                         if ($sc instanceof RenderableInterface) {
                             $scRender = $this->render(
-                                $sc, $this->getMode(), $params, $template, $this->_ignoreIfRenderModeNotAvailable
+                                $sc,
+                                $this->getMode(),
+                                $params,
+                                $template,
+                                $this->_ignoreIfRenderModeNotAvailable
                             );
 
                             if (false === $scRender) {
@@ -1039,7 +1050,8 @@ class Renderer extends AbstractRenderer implements DumpableServiceInterface, Dum
         }
 
         return $adapter->isValidTemplateFile(
-            $filename, true === $isLayout ? $this->_layoutdir : $this->_scriptdir
+            $filename,
+            true === $isLayout ? $this->_layoutdir : $this->_scriptdir
         );
     }
 
@@ -1048,15 +1060,18 @@ class Renderer extends AbstractRenderer implements DumpableServiceInterface, Dum
      * @param boolean $isLayout
      *
      * @return string
+     * @throws RendererException
      */
-    private function renderTemplate($isPartial = false, $isLayout = false)
+    private function renderTemplate($isPartial = false, $isLayout = false): string
     {
         $adapter = $this->determineWhichAdapterToUse($this->templateFile);
         $dirs = true === $isLayout ? $this->_layoutdir : $this->_scriptdir;
 
         if (null === $adapter) {
             throw new RendererException(sprintf(
-                'Unable to manage file \'%s\' in path (%s)', $this->templateFile, implode(', ', $dirs)
+                'Unable to manage file \'%s\' in path (%s)',
+                $this->templateFile,
+                implode(', ', $dirs)
             ), RendererException::SCRIPTFILE_ERROR);
         }
 
