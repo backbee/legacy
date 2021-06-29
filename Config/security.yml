@@ -9,7 +9,7 @@ firewalls:
         restful:
             provider: bb_user
             nonce_dir: security/nonces
-            lifetime: 1800
+            lifetime: 7200
             use_registry: true
         anonymous: ~
 
