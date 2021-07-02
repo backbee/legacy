@@ -24,18 +24,28 @@ namespace BackBee\Event\Listener;
 use BackBee\BBApplication;
 use BackBee\Controller\Exception\FrontControllerException;
 use BackBee\Renderer\AbstractRenderer;
-
+use Exception;
+use Symfony\Component\Debug\ExceptionHandler;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
 use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
+use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 /**
+ * Class ExceptionListener
+ *
+ * @package BackBee\Event\Listener
+ *
  * @author Mickaël Andrieu <mickael.andrieu@lp-digital.fr>
  */
 class ExceptionListener
 {
+    /**
+     * @var BBApplication
+     */
+    private $application;
+
     /**
      * @var AbstractRenderer
      */
@@ -61,7 +71,7 @@ class ExceptionListener
     /**
      * @param GetResponseForExceptionEvent $event
      */
-    public function onKernelException(GetResponseForExceptionEvent $event)
+    public function onKernelException(GetResponseForExceptionEvent $event): void
     {
         $exception = $event->getException();
         $statusCode = $this->getHttpStatusCode($exception->getCode());
@@ -69,32 +79,40 @@ class ExceptionListener
         if ($this->application->isDebugMode()) {
             $this->response = $this->getDebugTraceResponse($exception, $statusCode);
         } else {
-
             $this->response = $this->getErrorPageResponse($exception, $statusCode);
         }
 
         $event->setResponse($this->response);
 
-        $filterEvent = new FilterResponseEvent($event->getKernel(), $event->getRequest(), $event->getRequestType(), $event->getResponse());
+        $filterEvent = new FilterResponseEvent(
+            $event->getKernel(),
+            $event->getRequest(),
+            $event->getRequestType(),
+            $event->getResponse()
+        );
         $event->getDispatcher()->dispatch(KernelEvents::RESPONSE, $filterEvent);
     }
 
     /**
      * Return response with debug trace.
      *
-     * @param \Exception $exception
-     * @param int        $statusCode
+     * @param Exception $exception
+     * @param int       $statusCode
      *
      * @return Response
      */
-    private function getDebugTraceResponse(\Exception $exception, $statusCode)
+    private function getDebugTraceResponse(Exception $exception, $statusCode)
     {
         $request = $this->application->getRequest();
-        $response = (new \Symfony\Component\Debug\ExceptionHandler())->createResponse($exception);
+        $response = (new ExceptionHandler())->createResponse($exception);
         $response->setStatusCode($statusCode);
 
         if (in_array('application/json', $request->getAcceptableContentTypes())) {
-            $response = new JsonResponse($response->getContent(), $response->getStatusCode(), $response->headers->all());
+            $response = new JsonResponse(
+                $response->getContent(),
+                $response->getStatusCode(),
+                $response->headers->all()
+            );
         }
 
         return $response;
@@ -103,16 +121,16 @@ class ExceptionListener
     /**
      * Returns response for rendered error page.
      *
-     * @param  \Exception $exception
-     * @param  int        $statusCode
+     * @param Exception $exception
+     * @param int       $statusCode
      *
      * @return Response
      */
-    private function getErrorPageResponse(\Exception $exception, $statusCode)
+    private function getErrorPageResponse(Exception $exception, int $statusCode): Response
     {
         $parameter = $this->application->getContainer()->getParameter('error.default');
-        if ($this->application->getContainer()->hasParameter('error.'.$statusCode)) {
-            $parameter = $this->application->getContainer()->getParameter('error.'.$statusCode);
+        if ($this->application->getContainer()->hasParameter('error.' . $statusCode)) {
+            $parameter = $this->application->getContainer()->getParameter('error.' . $statusCode);
         }
 
         $view = $this->getErrorTemplate($parameter);
@@ -123,7 +141,7 @@ class ExceptionListener
     /**
      * Returns a valid HTTP status code.
      *
-     * @param  int $statusCode
+     * @param int $statusCode
      *
      * @return int
      */
@@ -131,11 +149,11 @@ class ExceptionListener
     {
         if ($statusCode >= 100 && $statusCode < 600) {
             return $statusCode;
-        } elseif (
-                FrontControllerException::BAD_REQUEST === $statusCode
-                || FrontControllerException::INTERNAL_ERROR === $statusCode
-                || FrontControllerException::NOT_FOUND === $statusCode
-        ) {
+        }
+
+        if (FrontControllerException::BAD_REQUEST === $statusCode
+            || FrontControllerException::INTERNAL_ERROR === $statusCode
+            || FrontControllerException::NOT_FOUND === $statusCode) {
             return $statusCode - FrontControllerException::UNKNOWN_ERROR;
         }
 
@@ -148,14 +166,12 @@ class ExceptionListener
      *
      * @input string $parameter path related to 404|500|default HTTP status code
      *
+     * @param $parameter
+     *
      * @return string
      */
-    private function getErrorTemplate($parameter)
+    private function getErrorTemplate($parameter): string
     {
-        return $this->application
-            ->getContainer()
-            ->getParameter('error.base_folder')
-            . $parameter
-        ;
+        return $this->application->getContainer()->getParameter('error.base_folder') . $parameter;
     }
 }

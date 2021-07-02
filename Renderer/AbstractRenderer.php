@@ -683,7 +683,7 @@ abstract class AbstractRenderer implements RendererInterface
         // Nothing to do
     }
 
-    public function partial($template = null, $params = null)
+    public function partial($template = null, $params = null): string
     {
         // Nothing to do
     }
