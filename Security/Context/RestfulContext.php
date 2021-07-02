@@ -21,39 +21,44 @@
 
 namespace BackBee\Security\Context;
 
+use BackBee\Bundle\Registry;
+use BackBee\Bundle\Registry\Repository;
 use BackBee\Security\Authentication\Provider\BBAuthenticationProvider;
 use BackBee\Security\Authentication\Provider\PublicKeyAuthenticationProvider;
 use BackBee\Security\Listeners\LogoutListener;
 use BackBee\Security\Listeners\PublicKeyAuthenticationListener;
 use BackBee\Security\Logout\BBLogoutHandler;
 use BackBee\Security\Logout\BBLogoutSuccessHandler;
-
 use Symfony\Component\Security\Core\Authentication\Provider\AuthenticationProviderInterface;
 use Symfony\Component\Security\Http\HttpUtils;
 
 /**
+ * Class RestfulContext
+ *
  * Restful Security Context.
  *
- * @category    BackBee
+ * @package BackBee\Security\Context
  *
- * @copyright   Lp digital system
- * @author      e.chau <eric.chau@lp-digital.fr>
+ * @author  e.chau <eric.chau@lp-digital.fr>
  */
 class RestfulContext extends AbstractContext implements ContextInterface
 {
     /**
      * {@inheritdoc}
      */
-    public function loadListeners($config)
+    public function loadListeners($config): array
     {
         $listeners = array();
 
         if (array_key_exists('restful', $config)) {
-            $config = array_merge([
-                'nonce_dir' => 'security/nonces',
-                'lifetime' => 1200,
-                'use_registry' => false,
-            ], (array) $config['restful']);
+            $config = array_merge(
+                [
+                    'nonce_dir' => 'security/nonces',
+                    'lifetime' => 7200,
+                    'use_registry' => false,
+                ],
+                (array)$config['restful']
+            );
 
             if (false !== ($defaultProvider = $this->getDefaultProvider($config))) {
 
@@ -76,8 +81,7 @@ class RestfulContext extends AbstractContext implements ContextInterface
                             true === $config['use_registry'] ? $this->getRegistryRepository() : null,
                             $this->_context->getEncoderFactory()
                         )
-                    )
-                ;
+                    );
 
                 $listeners[] = new PublicKeyAuthenticationListener(
                     $this->_context,
@@ -94,9 +98,10 @@ class RestfulContext extends AbstractContext implements ContextInterface
 
     /**
      * Gets the API user role from container
+     *
      * @return string
      */
-    private function getApiUserRole()
+    private function getApiUserRole(): ?string
     {
         $apiUserRole = null;
 
@@ -117,7 +122,7 @@ class RestfulContext extends AbstractContext implements ContextInterface
      *
      * @param AuthenticationProviderInterface $bbProvider
      */
-    private function loadLogoutListener(AuthenticationProviderInterface $bbProvider)
+    private function loadLogoutListener(AuthenticationProviderInterface $bbProvider): void
     {
         if (null === $this->_context->getLogoutListener()) {
             $httpUtils = new HttpUtils();
@@ -136,21 +141,21 @@ class RestfulContext extends AbstractContext implements ContextInterface
      *
      * @return string the nonce directory path
      */
-    private function getNonceDirectory(array $config)
+    private function getNonceDirectory(array $config): string
     {
-        return $this->_context->getApplication()->getCacheDir().DIRECTORY_SEPARATOR.$config['nonce_dir'];
+        return $this->_context->getApplication()->getCacheDir() . DIRECTORY_SEPARATOR . $config['nonce_dir'];
     }
 
     /**
      * Returns the repository to Registry entities.
      *
-     * @return \BackBuillder\Bundle\Registry\Repository
+     * @return Repository
      */
-    private function getRegistryRepository()
+    private function getRegistryRepository(): ?Repository
     {
         $repository = null;
         if (null !== $em = $this->_context->getApplication()->getEntityManager()) {
-            $repository = $em->getRepository('BackBee\Bundle\Registry');
+            $repository = $em->getRepository(Registry::class);
         }
 
         return $repository;
