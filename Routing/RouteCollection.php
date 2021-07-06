@@ -280,20 +280,20 @@ class RouteCollection extends sfRouteCollection implements DumpableServiceInterf
      * Returns $pathinfo with base url of current page
      * If $site is provided, the url will be pointing on the associate domain.
      *
-     * @param string      $pathinfo  The pathinfo to treate.
+     * @param null|string      $pathinfo  The pathinfo to treate.
      * @param string|null $extension Optional, the extension to add to URI.
      * @param Site|null   $site      Optional, the site for which the uri will be built.
      * @param int|null    $urlType   Optional, the URL prefix to use.
      *
-     * @return string                 The URI computed.
+     * @return null|string                 The URI computed.
      */
     public function getUri(
-        string $pathinfo = '',
+        ?string $pathinfo = null,
         ?string $extension = null,
         Site $site = null,
         ?int $urlType = null,
         bool $addDefaultExtension = true
-    ): string {
+    ): ?string {
         // if scheme already provided, returns pathinfo
         if (parse_url($pathinfo, PHP_URL_SCHEME)) {
             return $pathinfo;

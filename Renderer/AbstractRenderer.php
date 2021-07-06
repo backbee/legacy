@@ -504,7 +504,7 @@ abstract class AbstractRenderer implements RendererInterface
      * @param null      $url_type
      * @param bool      $addDefaultExtension
      *
-     * @return string
+     * @return null|string
      */
     public function getUri(
         $pathinfo = null,
@@ -512,7 +512,7 @@ abstract class AbstractRenderer implements RendererInterface
         Site $site = null,
         $url_type = null,
         bool $addDefaultExtension = true
-    ): string {
+    ): ?string {
         return $this->getApplication()->getRouting()->getUri(
             $pathinfo,
             $defaultExt,
