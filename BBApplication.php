@@ -91,7 +91,7 @@ use function is_string;
  */
 class BBApplication extends Kernel implements ApplicationInterface, DumpableServiceInterface, DumpableServiceProxyInterface
 {
-    public const VERSION = '4.2.0';
+    public const VERSION = '4.2.2';
 
     /**
      * application's context.
