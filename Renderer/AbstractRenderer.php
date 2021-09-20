@@ -342,16 +342,16 @@ abstract class AbstractRenderer implements RendererInterface
     }
 
     /**
-     * Add new script directory in the choosen position.
+     * Add new script directory in the chosen position.
      *
      * @codeCoverageIgnore
      *
-     * @param strimg  $new_dir  location of the new directory
+     * @param string  $new_dir  location of the new directory
      * @param integer $position position in the array
      */
-    public function addScriptDir($new_dir, $position = 1)
+    public function addScriptDir(string $new_dir, int $position = 1): AbstractRenderer
     {
-        if (true === file_exists($new_dir) && true === is_dir($new_dir)) {
+        if (file_exists($new_dir) === true && is_dir($new_dir) === true) {
             $this->insertInArrayOnPostion($this->_scriptdir, $new_dir, $position);
         }
 

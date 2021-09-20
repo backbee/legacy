@@ -107,14 +107,17 @@ class ClassContentController extends AbstractRestController
     /**
      * Returns collection of classcontent associated to category and according to provided criterias.
      *
-     * @return Symfony\Component\HttpFoundation\Response
+     * @param                                           $start
+     * @param                                           $count
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     *
+     * @return \Symfony\Component\HttpFoundation\Response
      *
      * @Rest\Pagination(default_count=25, max_count=100)
      * @Rest\Security("is_fully_authenticated() & has_role('ROLE_API_USER')")
      */
-    public function getCollectionAction($start, $count, Request $request)
+    public function getCollectionAction($start, $count, Request $request): Response
     {
-        $contents = [];
         $format = $this->getFormatParam();
         $response = $this->createJsonResponse();
         $categoryName = $request->query->get('category', null);
@@ -123,7 +126,7 @@ class ClassContentController extends AbstractRestController
             $response->setData($contents = $this->getClassContentDefinitionsByCategory($categoryName));
             $start = 0;
         } else {
-            if (null !== $categoryName) {
+            if ($categoryName !== null) {
                 $contents = $this->getClassContentByCategory($categoryName, $start, $count);
             } else {
                 $classnames = $this->getClassContentManager()->getAllClassContentClassnames();
@@ -544,7 +547,7 @@ class ClassContentController extends AbstractRestController
     /**
      * Getter of classcontent category manager.
      *
-     * @return BackBee\ClassContent\CategoryManager
+     * @return \BackBee\ClassContent\CategoryManager
      */
     private function getCategoryManager()
     {
@@ -554,7 +557,7 @@ class ClassContentController extends AbstractRestController
     /**
      * Returns ClassContentManager.
      *
-     * @return BackBee\ClassContent\ClassContentManager
+     * @return \BackBee\ClassContent\ClassContentManager
      */
     private function getClassContentManager()
     {
@@ -725,7 +728,7 @@ class ClassContentController extends AbstractRestController
      *
      * @return array
      */
-    private function getClassContentDefinitionsByCategory($name = null)
+    private function getClassContentDefinitionsByCategory($name = null): array
     {
         $application = $this->getApplication();
         $cache = $application->getContainer()->get('cache.control');
@@ -736,8 +739,7 @@ class ClassContentController extends AbstractRestController
         if (!$application->isDebugMode() && false !== $value = $cache->load($cacheId)) {
             $definitions = json_decode($value, true);
         } else {
-            $classnames = [];
-            if (null === $name) {
+            if ($name === null) {
                 $classnames = $this->getClassContentManager()->getAllClassContentClassnames();
             } else {
                 $classnames = $this->getClassContentClassnamesByCategory($name);
