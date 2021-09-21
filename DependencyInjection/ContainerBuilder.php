@@ -21,6 +21,7 @@
 
 namespace BackBee\DependencyInjection;
 
+use App\Helper\StandaloneHelper;
 use BackBee\ApplicationInterface;
 use BackBee\Command\AbstractCommand;
 use BackBee\DependencyInjection\Exception\ContainerAlreadyExistsException;
@@ -30,7 +31,6 @@ use BackBee\Logging\DebugStackLogger;
 use BackBee\Logging\Logger;
 use BackBee\Util\Resolver\ConfigDirectory;
 use LogicException;
-use App\Helper\StandaloneHelper;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Config\EnvParametersResource;
@@ -144,7 +144,7 @@ class ContainerBuilder
      */
     public function getContainer(): Container
     {
-        if (null !== $this->container) {
+        if ($this->container !== null) {
             throw new ContainerAlreadyExistsException($this->container);
         }
 
@@ -152,7 +152,7 @@ class ContainerBuilder
         $this->container = new Container();
         $this->hydrateContainerWithParameters();
 
-        if (false === $this->tryParseContainerDump()) {
+        if ($this->tryParseContainerDump() === false) {
             $this->hydrateContainerWithApplicationParameters();
             $this->hydrateContainerWithKernelParameters();
             $this->loadApplicationServices();
@@ -174,14 +174,14 @@ class ContainerBuilder
     {
         $success = false;
         if (
-            false === $this->container->getParameter('debug')
-            && true === $this->container->getParameter('container.autogenerate')
+            $this->container->getParameter('debug') === false
+            && $this->container->getParameter('container.autogenerate') === true
         ) {
             $dump_filepath = $this->container->getParameter('container.dump_directory');
             $dump_filepath .= DIRECTORY_SEPARATOR . $this->container->getParameter('container.filename') . '.php';
 
-            if (true === is_file($dump_filepath) && true === is_readable($dump_filepath)) {
-                $success = false !== @unlink($dump_filepath);
+            if (is_file($dump_filepath) === true && is_readable($dump_filepath) === true) {
+                $success = @unlink($dump_filepath) !== false;
             }
         }
 
@@ -204,7 +204,7 @@ class ContainerBuilder
             $missing_parameters = [];
             $this->tryAddParameter('debug', $parameters, $missing_parameters);
             $this->tryAddParameter('bootstrap_filepath', $parameters, $missing_parameters);
-            if (true === array_key_exists('container', $parameters)) {
+            if (array_key_exists('container', $parameters) === true) {
                 $this->tryAddParameter('dump_directory', $parameters['container'], $missing_parameters, 'container.');
                 $this->tryAddParameter('autogenerate', $parameters['container'], $missing_parameters, 'container.');
             } else {
@@ -216,7 +216,12 @@ class ContainerBuilder
                 throw new MissingParametersContainerDumpException($missing_parameters);
             }
         } else {
-            echo('<p>BackBee could not find composer autoloader. Did you install and run "composer install --no-dev" command?</p>');
+            echo(
+                sprintf(
+                    '<p>BackBee could not find composer autoloader. Did you install and run "%s" command?</p>',
+                    'composer install --no-dev'
+                )
+            );
             throw new LogicException(
                 'Could not find autoload.php in vendor/. Did you run "composer install --no-dev"?'
             );
@@ -238,7 +243,7 @@ class ContainerBuilder
         array &$missing_parameters,
         string $prefix = ''
     ): void {
-        if (false !== array_key_exists($key, $parameters)) {
+        if (array_key_exists($key, $parameters) !== false) {
             $this->container->setParameter($prefix . $key, $parameters[$key]);
         } else {
             $missing_parameters[] = $prefix . $key;
@@ -300,7 +305,7 @@ class ContainerBuilder
         $container_filename = $this->getContainerDumpFilename($this->container->getParameter('bootstrap_filepath'));
         $container_filepath = $container_directory . DIRECTORY_SEPARATOR . $container_filename;
 
-        if (false === $this->container->getParameter('debug') && true === is_readable($container_filepath . '.php')) {
+        if ($this->container->getParameter('debug') === false && is_readable($container_filepath . '.php') === true) {
             require_once $container_filepath . '.php';
             $this->container = new $container_filename();
             $this->container->init();
@@ -343,8 +348,8 @@ class ContainerBuilder
         $services_directory = $this->application->getBBDir() . '/Config/services';
 
         foreach (scandir($services_directory) as $file) {
-            if (1 === preg_match('#(\w+)\.(yml|xml)$#', $file, $matches)) {
-                if ('yml' === $matches[2]) {
+            if (preg_match('#(\w+)\.(yml|xml)$#', $file, $matches) === 1) {
+                if ($matches[2] === 'yml') {
                     ServiceLoader::loadServicesFromYamlFile($this->container, $services_directory, $matches[1]);
                 } else {
                     ServiceLoader::loadServicesFromXmlFile($this->container, $services_directory, $matches[1]);
@@ -362,11 +367,11 @@ class ContainerBuilder
 
         // Loop into every directory where we can potentially found a services.yml or services.xml
         foreach ($directories as $directory) {
-            if (true === is_readable($directory . DIRECTORY_SEPARATOR . self::SERVICE_FILENAME . '.yml')) {
+            if (is_readable($directory . DIRECTORY_SEPARATOR . self::SERVICE_FILENAME . '.yml') === true) {
                 ServiceLoader::loadServicesFromYamlFile($this->container, $directory);
             }
 
-            if (true === is_readable($directory . DIRECTORY_SEPARATOR . self::SERVICE_FILENAME . '.xml')) {
+            if (is_readable($directory . DIRECTORY_SEPARATOR . self::SERVICE_FILENAME . '.xml') === true) {
                 ServiceLoader::loadServicesFromXmlFile($this->container, $directory);
             }
         }
@@ -380,7 +385,7 @@ class ContainerBuilder
     private function loadLoggerDefinition(): void
     {
         $logger_class = Logger::class;
-        if (true === $this->container->getParameter('debug')) {
+        if ($this->container->getParameter('debug') === true) {
             $logger_class = DebugStackLogger::class;
         }
 
@@ -444,7 +449,7 @@ class ContainerBuilder
             ServiceLoader::getContainerLoader($this->application, $this->container)
         );
 
-        if (null !== $cont) {
+        if ($cont !== null) {
             $this->container->merge($cont);
         }
     }

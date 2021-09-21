@@ -198,11 +198,13 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
             return;
         }
 
+        $this->initializeMailer();
+
         // Force container to create SecurityContext object to activate listener
         try {
             $this->getSecurityContext();
         } catch (ContextErrorException $ex) {
-            if (null === $this->getEntityManager()) {
+            if ($this->getEntityManager() === null) {
                 throw new InvalidArgumentException(
                     'Unable to initialize security context, did you try to activate ACL voter without database connection?'
                 );
@@ -245,13 +247,13 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
     /**
      * Get mailer.
      *
-     * @return Swift_Mailer
+     * @return void
      */
-    public function getMailer(): Swift_Mailer
+    public function initializeMailer(): void
     {
         if (
-            false === $this->getContainer()->get('mailer') &&
-            ($config = $this->getConfig()->getSection('mailer'))
+            ($config = $this->getConfig()->getSection('mailer')) &&
+            (!$this->getContainer()->has('mailer') || $this->getContainer()->get('mailer'))
         ) {
             $transport = Swift_SmtpTransport::newInstance(
                 $config['server'] ?? '',
@@ -262,8 +264,6 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
             $transport->setUsername($config['username'] ?? '')->setPassword($config['password'] ?? '');
             $this->getContainer()->set('mailer', Swift_Mailer::newInstance($transport));
         }
-
-        return $this->getContainer()->get('mailer');
     }
 
     /**
@@ -272,7 +272,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
     public function isDebugMode()
     {
         $debug = $this->debug;
-        if (null !== $this->getContainer() && $this->getContainer()->hasParameter('debug')) {
+        if ($this->getContainer() !== null && $this->getContainer()->hasParameter('debug')) {
             $debug = $this->getContainer()->getParameter('debug');
         }
 
@@ -326,15 +326,15 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
      */
     public function start(Site $site = null): void
     {
-        if (null === $this->getEntityManager()) {
+        if ($this->getEntityManager() === null) {
             throw new LogicException('Cannot start BackBee without database connection');
         }
 
-        if (null === $site) {
+        if ($site === null) {
             $site = $this->getEntityManager()->getRepository(Site::class)->findOneBy([]);
         }
 
-        if (null !== $site) {
+        if ($site !== null) {
             $this->getContainer()->set('site', $site);
         }
 

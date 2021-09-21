@@ -21,13 +21,12 @@
 
 namespace BackBee\DependencyInjection\Listener;
 
-use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
-use BackBee\DependencyInjection\Container;
 use BackBee\DependencyInjection\ContainerProxy;
 use BackBee\DependencyInjection\Dumper\PhpArrayDumper;
 use BackBee\DependencyInjection\Exception\CannotCreateContainerDirectoryException;
 use BackBee\DependencyInjection\Exception\ContainerDirectoryNotWritableException;
 use BackBee\Event\Event;
+use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
 
 /**
  * @category    BackBee
@@ -41,27 +40,30 @@ class ContainerListener
      * Occurs on event ``bbapplication.init`` to dump application container if debug mode is false.
      *
      * @param Event $event
+     *
+     * @throws \BackBee\DependencyInjection\Exception\CannotCreateContainerDirectoryException
+     * @throws \BackBee\DependencyInjection\Exception\ContainerDirectoryNotWritableException
      */
-    public static function onApplicationInit(Event $event)
+    public static function onApplicationInit(Event $event): void
     {
         $application = $event->getTarget();
         $container = $application->getContainer();
 
-        if (false === $application->isDebugMode() && false === $container->isRestored()) {
+        if ($application->isDebugMode() === false && $container->isRestored() === false) {
             $containerFilename = $container->getParameter('container.filename');
             $containerDir = $container->getParameter('container.dump_directory');
 
-            if (false === is_dir($containerDir) && false === @mkdir($containerDir, 0755)) {
+            if (is_dir($containerDir) === false && !mkdir($containerDir, 0755) && !is_dir($containerDir)) {
                 throw new CannotCreateContainerDirectoryException($containerDir);
             }
 
-            if (false === is_writable($containerDir)) {
+            if (is_writable($containerDir) === false) {
                 throw new ContainerDirectoryNotWritableException($containerDir);
             }
 
             $dumper = new PhpArrayDumper($container);
 
-            $dump = $dumper->dump(array('do_compile' => true));
+            $dump = $dumper->dump(['do_compile' => true]);
 
             $container_proxy = new ContainerProxy();
             $dump = unserialize($dump);
@@ -70,13 +72,13 @@ class ContainerListener
             $container_proxy->setParameter('is_compiled', $dump['is_compiled']);
 
             file_put_contents(
-                $containerDir.DIRECTORY_SEPARATOR.$containerFilename.'.php',
-                (new PhpDumper($container_proxy))->dump(array(
-                    'class'      => $containerFilename,
-                    'base_class' => 'BackBee\DependencyInjection\ContainerProxy',
-                ))
+                $containerDir . DIRECTORY_SEPARATOR . $containerFilename . '.php',
+                (new PhpDumper($container_proxy))->dump([
+                    'class' => $containerFilename,
+                    'base_class' => ContainerProxy::class,
+                ])
             );
-        } elseif (true === $application->isDebugMode() && false === $container->isRestored()) {
+        } elseif ($application->isDebugMode() === true && $container->isRestored() === false) {
             $container->compile();
         }
     }
