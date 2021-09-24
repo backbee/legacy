@@ -43,7 +43,7 @@ class Yaml extends AbstractClassWrapper
     /**
      * Current BackBee application.
      *
-     * @var BackBee\BBApplication
+     * @var \BackBee\BBApplication
      */
     private $_application;
 
@@ -75,16 +75,16 @@ class Yaml extends AbstractClassWrapper
     {
         parent::__construct();
 
-        if (null === $this->_autoloader) {
-            throw new ClassWrapperException('The BackBee autoloader can not be retreived.');
+        if ($this->_autoloader === null) {
+            throw new ClassWrapperException('The BackBee autoloader can not be retrieved.');
         }
 
         $this->_application = $this->_autoloader->getApplication();
-        if (null !== $this->_application) {
+        if ($this->_application !== null) {
             $this->_classcontentdir = $this->_application->getClassContentDir();
         }
 
-        if (null === $this->_classcontentdir || 0 == count($this->_classcontentdir)) {
+        if ($this->_classcontentdir === null || count($this->_classcontentdir) == 0) {
             throw new ClassWrapperException('None ClassContent repository defined.');
         }
     }
@@ -300,10 +300,10 @@ class Yaml extends AbstractClassWrapper
                 if (false !== $files = glob($repository . DIRECTORY_SEPARATOR . $pattern . $ext)) {
                     foreach ($files as $file) {
                         $classnames[] = $this->namespace . NAMESPACE_SEPARATOR . str_replace(
-                            [$repository . DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR],
-                            ['', NAMESPACE_SEPARATOR],
-                            $file
-                        );
+                                [$repository . DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR],
+                                ['', NAMESPACE_SEPARATOR],
+                                $file
+                            );
                     }
                 }
             }
@@ -326,20 +326,20 @@ class Yaml extends AbstractClassWrapper
      *
      * @throws BBException           Occurs when none yamel files were found
      * @throws ClassWrapperException Occurs when yaml file is not a valid class content description
-     * @see BackBee\Stream\ClassWrapper.IClassWrapper::stream_open()
+     * @see \BackBee\Stream\ClassWrapper.IClassWrapper::stream_open()
      *
      */
     public function stream_open($path, $mode, $options, &$opened_path)
     {
-        $path = str_replace([$this->_protocol.'://', '/', '.php'], ['', DIRECTORY_SEPARATOR, ''], $path);
+        $path = str_replace([$this->_protocol . '://', '/', '.php'], ['', DIRECTORY_SEPARATOR, ''], $path);
 
         $this->classname = basename($path);
         if (dirname($path) && dirname($path) != DIRECTORY_SEPARATOR) {
             $this->namespace .= NAMESPACE_SEPARATOR . str_replace(
-                DIRECTORY_SEPARATOR,
-                NAMESPACE_SEPARATOR,
-                dirname($path)
-            );
+                    DIRECTORY_SEPARATOR,
+                    NAMESPACE_SEPARATOR,
+                    dirname($path)
+                );
         }
 
         $this->_path = $this->resolveFilePath($path);
@@ -408,7 +408,7 @@ class Yaml extends AbstractClassWrapper
     /**
      * Retrieve information about a yaml file.
      *
-     * @see BackBee\Stream\ClassWrapper.AbstractClassWrapper::url_stat()
+     * @see \BackBee\Stream\ClassWrapper.AbstractClassWrapper::url_stat()
      */
     public function url_stat($path, $flag)
     {

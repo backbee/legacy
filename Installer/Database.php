@@ -21,12 +21,13 @@
 
 namespace BackBee\Installer;
 
+use BackBee\BBApplication;
+use BackBee\Bundle\AbstractBundle;
 use Doctrine\DBAL\Event\SchemaAlterTableEventArgs;
 use Doctrine\DBAL\Events;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\SchemaTool;
-
-use BackBee\BBApplication;
+use ReflectionClass;
 
 /**
  * @category    BackBee
@@ -89,7 +90,7 @@ class Database
             $this->_schemaTool->dropSchema($classes);
             $this->_schemaTool->createSchema($classes);
         } catch (\Exception $e) {
-            echo $e->getMessage()."\n";
+            echo $e->getMessage() . "\n";
         }
     }
 
@@ -121,26 +122,34 @@ class Database
             $schemaTool->createSchema($classes);
             unset($schemaTool);
         } catch (\Exception $e) {
-            echo $e->getMessage()."\n";
+            echo $e->getMessage() . "\n";
         }
     }
 
     /**
-     * update BackBee schema.
+     * Update BackBee schema.
      */
-    public function updateBackBeeSchema()
+    public function updateBackBeeSchema(): void
     {
         $this->_schemaTool->updateSchema($this->getBackBeeSchema(), true);
     }
 
     /**
-     * update all bundles schema.
+     * Update all bundles schema.
      */
-    public function updateBundlesSchema()
+    public function updateBundlesSchema(): void
     {
         foreach ($this->_application->getBundles() as $bundle) {
             $this->updateBundleSchema($bundle->getId());
         }
+    }
+
+    /**
+     * Update app schema.
+     */
+    public function updateAppSchema(): void
+    {
+        $this->_schemaTool->updateSchema($this->getAppSchema(), true);
     }
 
     /**
@@ -159,15 +168,17 @@ class Database
             $classes = $this->getBundleSchema($bundle);
             $schemaTool->updateSchema($classes, true);
             unset($schemaTool);
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+        }
     }
 
     /**
      * @return array
      */
-    private function getBackBeeSchema()
+    private function getBackBeeSchema(): array
     {
-        $classes = array();
+        $classes = [];
+
         foreach ($this->_entityFinder->getEntities($this->_application->getBBDir()) as $className) {
             $classes[] = $this->_em->getClassMetadata($className);
         }
@@ -176,13 +187,31 @@ class Database
     }
 
     /**
-     * @param  \BackBee\Bundle\AbstractBundle $bundle
+     * Get app schema.
+     *
      * @return array
      */
-    private function getBundleSchema($bundle)
+    private function getAppSchema(): array
     {
-        $reflection = new \ReflectionClass(get_class($bundle));
-        $classes = array();
+        $classes = [];
+
+        foreach ($this->_entityFinder->getEntities($this->_application->getAppDir()) as $className) {
+            $classes[] = $this->_em->getClassMetadata($className);
+        }
+
+        return $classes;
+    }
+
+    /**
+     * @param \BackBee\Bundle\AbstractBundle $bundle
+     *
+     * @return array
+     */
+    private function getBundleSchema(AbstractBundle $bundle): array
+    {
+        $reflection = new ReflectionClass(get_class($bundle));
+        $classes = [];
+
         foreach ($this->_entityFinder->getEntities(dirname($reflection->getFileName())) as $className) {
             $classes[] = $this->_em->getClassMetadata($className);
         }
@@ -199,7 +228,7 @@ class Database
 
         $sql = implode(";\n", $sql);
 
-        return $sql.';';
+        return $sql . ';';
     }
 
     private function getBackBeeSqlSchema()

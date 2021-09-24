@@ -123,7 +123,7 @@ interface ApplicationInterface
     public function getResourceDir(): array;
 
     /**
-     * Return the class content repositories path for this instance.
+     * Return the class content repositories' path for this instance.
      *
      * @return string[] The class contents directories
      */
@@ -142,6 +142,13 @@ interface ApplicationInterface
      * @return string The log directory
      */
     public function getLogDir(): string;
+
+    /**
+     * Gets the app directory.
+     *
+     * @return string The app directory
+     */
+    public function getAppDir(): string;
 
     /**
      * @return FrontController

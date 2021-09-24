@@ -21,6 +21,7 @@
 
 namespace BackBee\ClassContent\Listener;
 
+use BackBee\ApplicationInterface;
 use BackBee\ClassContent\AbstractClassContent;
 use BackBee\ClassContent\Element\File as ElementFile;
 use BackBee\ClassContent\Exception\ClassContentException;

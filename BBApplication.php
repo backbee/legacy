@@ -417,9 +417,19 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
      *
      * @return string
      */
-    public function getVendorDir()
+    public function getVendorDir(): string
     {
         return $this->getBaseDir() . DIRECTORY_SEPARATOR . 'vendor';
+    }
+
+    /**
+     * Get app dir.
+     *
+     * @return string
+     */
+    public function getAppDir(): string
+    {
+        return StandaloneHelper::appDir();
     }
 
     /**
@@ -634,11 +644,12 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
      */
     public function getClassContentDir(): array
     {
-        if (null === $this->classcontentDir) {
+        if ($this->classcontentDir === null) {
             $this->classcontentDir = [];
 
             array_unshift($this->classcontentDir, $this->getBBDir() . '/ClassContent');
             array_unshift($this->classcontentDir, $this->getBaseRepository() . '/ClassContent');
+            array_unshift($this->classcontentDir, StandaloneHelper::resDir() . DIRECTORY_SEPARATOR . 'classcontents');
 
             if ($this->hasContext()) {
                 array_unshift($this->classcontentDir, $this->getRepository() . '/ClassContent');
