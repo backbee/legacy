@@ -273,7 +273,17 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
             $this->getContainer()->set('mailer', Swift_Mailer::newInstance($transport));
         }
     }
-    
+
+    /**
+     * Get mailer service.
+     *
+     * @return null|\Swift_Mailer
+     */
+    public function getMailer(): ?Swift_Mailer
+    {
+        return $this->container->get('mailer');
+    }
+
     /**
      * {@inheritDoc}
      */
