@@ -91,7 +91,7 @@ use function is_string;
  */
 class BBApplication extends Kernel implements ApplicationInterface, DumpableServiceInterface, DumpableServiceProxyInterface
 {
-    public const VERSION = '4.2.2';
+    public const VERSION = '4.2.3';
 
     /**
      * application's context.
@@ -155,9 +155,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
         $this->isStarted = false;
         $this->overwriteConfig = $overwrite_config;
         $this->isRestored = false;
-        $this->environment = null !== $environment && is_string($environment)
-            ? $environment
-            : self::DEFAULT_ENVIRONMENT;
+        $this->environment = is_string($environment) ? $environment : self::DEFAULT_ENVIRONMENT;
         $this->dumpData = [];
 
         $this->initAnnotationReader();
@@ -170,7 +168,19 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
             Debug::enable();
         }
 
-        $this->initEnvVariables();
+        try {
+            $this->initEnvVariables();
+        } catch (Exception $exception) {
+            $this->getLogging()->error(
+                sprintf(
+                    '%s : %s :%s',
+                    __CLASS__,
+                    __FUNCTION__,
+                    $exception->getMessage()
+                )
+            );
+        }
+
         $this->initAutoloader();
         $this->initContentWrapper();
 
@@ -197,8 +207,6 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
 
             return;
         }
-
-        $this->initializeMailer();
 
         // Force container to create SecurityContext object to activate listener
         try {
@@ -229,6 +237,9 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
         // trigger bbapplication.init
         $this->getEventDispatcher()->dispatch('bbapplication.init', new Event($this));
 
+        // Initialize mailer.
+        $this->initializeMailer();
+
         parent::__construct($environment, $this->isDebugMode());
     }
 
@@ -251,19 +262,26 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
      */
     public function initializeMailer(): void
     {
-        if (
-            ($config = $this->getConfig()->getSection('mailer')) &&
-            (!$this->getContainer()->has('mailer') || $this->getContainer()->get('mailer'))
-        ) {
+        if (($config = $this->getConfig()->getSection('mailer')) && null === $this->getContainer()->get('mailer')) {
             $transport = Swift_SmtpTransport::newInstance(
                 $config['server'] ?? '',
                 $config['port'] ?? '',
-                $config['encryption'] ?? ''
+                $config['encryption'] ?? null
             );
 
             $transport->setUsername($config['username'] ?? '')->setPassword($config['password'] ?? '');
             $this->getContainer()->set('mailer', Swift_Mailer::newInstance($transport));
         }
+    }
+
+    /**
+     * Get mailer service.
+     *
+     * @return null|\Swift_Mailer
+     */
+    public function getMailer(): ?Swift_Mailer
+    {
+        return $this->container->get('mailer');
     }
 
     /**
