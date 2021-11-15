@@ -21,11 +21,11 @@
 
 namespace BackBee\Security\Logout;
 
+use BackBee\Security\Authentication\Provider\BBAuthenticationProvider;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Http\Logout\LogoutHandlerInterface;
-use BackBee\Security\Authentication\Provider\BBAuthenticationProvider;
 
 /**
  * Handler for clearing nonce file of BB connection.
@@ -40,9 +40,9 @@ class BBLogoutHandler implements LogoutHandlerInterface
     /**
      * The BB user authentication provider.
      *
-     * @var \$authentication_provider
+     * @var \ $authenticationProvider
      */
-    private $_authentication_provider;
+    private $authenticationProvider;
 
     /**
      * Class constructor.
@@ -51,7 +51,7 @@ class BBLogoutHandler implements LogoutHandlerInterface
      */
     public function __construct(BBAuthenticationProvider $authentication_provider)
     {
-        $this->_authentication_provider = $authentication_provider;
+        $this->authenticationProvider = $authentication_provider;
     }
 
     /**
@@ -61,8 +61,12 @@ class BBLogoutHandler implements LogoutHandlerInterface
      * @param \Symfony\Component\HttpFoundation\Response                           $response
      * @param \Symfony\Component\Security\Core\Authentication\Token\TokenInterface $token
      */
-    public function logout(Request $request, Response $response, TokenInterface $token)
+    public function logout(Request $request, Response $response, TokenInterface $token): void
     {
-        $this->_authentication_provider->clearNonce($token);
+        if ($request->getSession()) {
+            $request->getSession()->invalidate();
+        }
+
+        $this->authenticationProvider->clearNonce($token);
     }
 }
