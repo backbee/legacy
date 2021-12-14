@@ -1050,6 +1050,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
 
         if (isset($dump['locale'])) {
             setLocale(LC_ALL, $dump['locale']);
+            setLocale(LC_NUMERIC, 'en_US.UTF-8');
         }
 
         $this->isRestored = true;
@@ -1101,6 +1102,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
                 throw new Exception(sprintf('Unabled to setLocal with locale %s', $encoding['locale']));
             }
 
+            setLocale(LC_NUMERIC, 'en_US.UTF-8');
             $this->dumpData['locale'] = $encoding['locale'];
         }
     }
