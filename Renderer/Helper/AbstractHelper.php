@@ -22,12 +22,15 @@
 namespace BackBee\Renderer\Helper;
 
 use BackBee\Renderer\AbstractRenderer;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * @category    BackBee
+ * @category  BackBee
  *
- * @copyright   Lp digital system
- * @author      c.rouillon <charles.rouillon@lp-digital.fr>
+ * @copyright Lp digital system
+ *
+ * @author    c.rouillon <charles.rouillon@lp-digital.fr>
+ * @author    Djoudi Bensid <djoudi.bensid@lp-digital.fr>
  */
 abstract class AbstractHelper
 {
@@ -49,18 +52,34 @@ abstract class AbstractHelper
     /**
      * Set the renderer.
      *
-     * @param  \BackBee\Renderer\AbstractRenderer      $renderer
+     * @param \BackBee\Renderer\AbstractRenderer $renderer
+     *
      * @return \BackBee\Renderer\Helper\AbstractHelper
      */
-    public function setRenderer(AbstractRenderer $renderer)
+    public function setRenderer(AbstractRenderer $renderer): AbstractHelper
     {
         $this->_renderer = $renderer;
 
         return $this;
     }
 
-    public function getRenderer()
+    /**
+     * Get renderer.
+     *
+     * @return \BackBee\Renderer\AbstractRenderer
+     */
+    public function getRenderer(): AbstractRenderer
     {
         return $this->_renderer;
+    }
+
+    /**
+     * Get container.
+     *
+     * @return \Symfony\Component\DependencyInjection\ContainerInterface
+     */
+    public function getContainer(): ContainerInterface
+    {
+        return $this->_renderer->getApplication()->getContainer();
     }
 }
