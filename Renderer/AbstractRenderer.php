@@ -21,18 +21,17 @@
 
 namespace BackBee\Renderer;
 
-use BackBee\NestedNode\Page;
-use Symfony\Component\HttpFoundation\ParameterBag;
-use Symfony\Component\Security\Core\Util\ClassUtils;
-
 use BackBee\BBApplication;
+use BackBee\ClassContent\AbstractClassContent;
+use BackBee\NestedNode\Page;
 use BackBee\Renderer\Event\RendererEvent;
 use BackBee\Renderer\Exception\RendererException;
 use BackBee\Site\Layout;
 use BackBee\Site\Site;
 use BackBee\Util\File\File;
 use BackBee\Util\StringUtils;
-use BackBee\ClassContent\AbstractClassContent;
+use Symfony\Component\HttpFoundation\ParameterBag;
+use Symfony\Component\Security\Core\Util\ClassUtils;
 
 /**
  * Abstract class for a renderer.
@@ -47,7 +46,7 @@ abstract class AbstractRenderer implements RendererInterface
     /**
      * Current BackBee application.
      *
-     * @var BackBee\BBApplication
+     * @var \BackBee\BBApplication
      */
     protected $application;
 
@@ -68,11 +67,12 @@ abstract class AbstractRenderer implements RendererInterface
     /**
      * The current page to be render.
      *
-     * @var BackBee\NestedNode\Page
+     * @var \BackBee\NestedNode\Page
      */
     protected $_currentpage;
 
     /** The rendering mode
+     *
      * @var string
      */
     protected $_mode;
@@ -140,14 +140,21 @@ abstract class AbstractRenderer implements RendererInterface
 
             $rendererConfig = $this->application->getConfig()->getRendererConfig();
             if (is_array($rendererConfig) && isset($rendererConfig['path'])) {
-                $config = (null === $config) ? $rendererConfig['path'] : array_merge_recursive($config, $rendererConfig['path']);
+                $config = (null === $config) ? $rendererConfig['path'] : array_merge_recursive(
+                    $config,
+                    $rendererConfig['path']
+                );
             }
         }
 
         if (is_array($config)) {
             if (true === array_key_exists('scriptdir', $config)) {
-                $dirs = (array) $config['scriptdir'];
-                array_walk($dirs, array('\BackBee\Util\File\File', 'resolveFilepath'), array('base_dir' => $this->getApplication()->getRepository()));
+                $dirs = (array)$config['scriptdir'];
+                array_walk(
+                    $dirs,
+                    array('\BackBee\Util\File\File', 'resolveFilepath'),
+                    array('base_dir' => $this->getApplication()->getRepository())
+                );
                 foreach ($dirs as $dir) {
                     if (true === file_exists($dir) && true === is_dir($dir)) {
                         $this->_scriptdir[] = $dir;
@@ -155,8 +162,12 @@ abstract class AbstractRenderer implements RendererInterface
                 }
 
                 if (true === $this->getApplication()->hasContext()) {
-                    $dirs = (array) $config['scriptdir'];
-                    array_walk($dirs, array('\BackBee\Util\File\File', 'resolveFilepath'), array('base_dir' => $this->getApplication()->getBaseRepository()));
+                    $dirs = (array)$config['scriptdir'];
+                    array_walk(
+                        $dirs,
+                        array('\BackBee\Util\File\File', 'resolveFilepath'),
+                        array('base_dir' => $this->getApplication()->getBaseRepository())
+                    );
                     foreach ($dirs as $dir) {
                         if (true === file_exists($dir) && true === is_dir($dir)) {
                             $this->_scriptdir[] = $dir;
@@ -166,8 +177,12 @@ abstract class AbstractRenderer implements RendererInterface
             }
 
             if (true === array_key_exists('layoutdir', $config)) {
-                $dirs = (array) $config['layoutdir'];
-                array_walk($dirs, array('\BackBee\Util\File\File', 'resolveFilepath'), array('base_dir' => $this->getApplication()->getRepository()));
+                $dirs = (array)$config['layoutdir'];
+                array_walk(
+                    $dirs,
+                    array('\BackBee\Util\File\File', 'resolveFilepath'),
+                    array('base_dir' => $this->getApplication()->getRepository())
+                );
                 foreach ($dirs as $dir) {
                     if (true === file_exists($dir) && true === is_dir($dir)) {
                         $this->_layoutdir[] = $dir;
@@ -175,8 +190,12 @@ abstract class AbstractRenderer implements RendererInterface
                 }
 
                 if (true === $this->getApplication()->hasContext()) {
-                    $dirs = (array) $config['layoutdir'];
-                    array_walk($dirs, array('\BackBee\Util\File\File', 'resolveFilepath'), array('base_dir' => $this->getApplication()->getBaseRepository()));
+                    $dirs = (array)$config['layoutdir'];
+                    array_walk(
+                        $dirs,
+                        array('\BackBee\Util\File\File', 'resolveFilepath'),
+                        array('base_dir' => $this->getApplication()->getBaseRepository())
+                    );
                     foreach ($dirs as $dir) {
                         if (true === file_exists($dir) && true === is_dir($dir)) {
                             $this->_layoutdir[] = $dir;
@@ -189,7 +208,7 @@ abstract class AbstractRenderer implements RendererInterface
         if (null !== $this->application) {
             $renderer_config = $application->getConfig()->getRendererConfig();
             if (true === isset($renderer_config['bb_scripts_directory'])) {
-                $directories = (array) $renderer_config['bb_scripts_directory'];
+                $directories = (array)$renderer_config['bb_scripts_directory'];
                 foreach ($directories as $directory) {
                     if (true === is_dir($directory) && true === is_readable($directory)) {
                         $this->_scriptdir[] = $directory;
@@ -251,8 +270,10 @@ abstract class AbstractRenderer implements RendererInterface
      * Magic method to assign a var.
      *
      * @codeCoverageIgnore
-     * @param  string    $var   the name of the variable
-     * @param  mixed     $value the value of the variable
+     *
+     * @param string $var   the name of the variable
+     * @param mixed  $value the value of the variable
+     *
      * @return AbstractRenderer the current renderer
      */
     public function __set($var, $value = null)
@@ -282,9 +303,8 @@ abstract class AbstractRenderer implements RendererInterface
     public function __clone()
     {
         $this->cache()
-             ->reset()
-             ->updateHelpers()
-        ;
+            ->reset()
+            ->updateHelpers();
     }
 
     /**
@@ -366,8 +386,8 @@ abstract class AbstractRenderer implements RendererInterface
 
         $templates = array();
         foreach ($this->_scriptdir as $dir) {
-            if (true === is_array(glob($dir.DIRECTORY_SEPARATOR.$pattern))) {
-                $templates = array_merge($templates, glob($dir.DIRECTORY_SEPARATOR.$pattern));
+            if (true === is_array(glob($dir . DIRECTORY_SEPARATOR . $pattern))) {
+                $templates = array_merge($templates, glob($dir . DIRECTORY_SEPARATOR . $pattern));
             }
         }
 
@@ -389,15 +409,16 @@ abstract class AbstractRenderer implements RendererInterface
     /**
      * Returns the list of available render mode for the provided object.
      *
-     * @param  \BackBee\Renderer\RenderableInterface $object
+     * @param \BackBee\Renderer\RenderableInterface $object
+     *
      * @return array
      */
     public function getAvailableRenderMode(RenderableInterface $object)
     {
         $templatePath = $this->getTemplatePath($object);
-        $templates = $this->getTemplatesByPattern($templatePath.'.*');
+        $templates = $this->getTemplatesByPattern($templatePath . '.*');
         foreach ($templates as &$template) {
-            $template = basename(str_replace($templatePath.'.', '', $template));
+            $template = basename(str_replace($templatePath . '.', '', $template));
         }
 
         unset($template);
@@ -437,9 +458,9 @@ abstract class AbstractRenderer implements RendererInterface
                 if ($value instanceof AbstractClassContent) {
                     // trying to load subcontent
                     $subcontent = $this->getApplication()
-                            ->getEntityManager()
-                            ->getRepository(ClassUtils::getRealClass($value))
-                            ->load($value, $this->getApplication()->getBBUserToken());
+                        ->getEntityManager()
+                        ->getRepository(ClassUtils::getRealClass($value))
+                        ->load($value, $this->getApplication()->getBBUserToken());
                     if (null !== $subcontent) {
                         $value = $subcontent;
                     }
@@ -528,7 +549,7 @@ abstract class AbstractRenderer implements RendererInterface
 
         if ($this->application->isStarted() && null !== $this->application->getRequest()) {
             $request = $this->application->getRequest();
-            $baseurl = str_replace('\\', '/', $request->getSchemeAndHttpHost().dirname($request->getBaseUrl()));
+            $baseurl = str_replace('\\', '/', $request->getSchemeAndHttpHost() . dirname($request->getBaseUrl()));
             $url = str_replace($baseurl, '', $uri);
 
             if (false !== $ext = strrpos($url, '.')) {
@@ -536,7 +557,7 @@ abstract class AbstractRenderer implements RendererInterface
             }
 
             if ('/' != substr($url, 0, 1)) {
-                $url = '/'.$url;
+                $url = '/' . $url;
             }
         }
 
@@ -633,8 +654,7 @@ abstract class AbstractRenderer implements RendererInterface
         } else {
             return $this->application->getEntityManager()
                 ->getRepository('BackBee\NestedNode\Page')
-                ->getRoot($this->getCurrentSite())
-            ;
+                ->getRoot($this->getCurrentSite());
         }
     }
 
@@ -670,16 +690,23 @@ abstract class AbstractRenderer implements RendererInterface
      * Processes a view script and returns the output.
      *
      * @access public
-     * @param  RenderableInterface $content                        The object to be rendered
-     * @param  string      $mode                           The rendering mode
-     * @param  array       $params                         A force set of parameters
-     * @param  string      $template                       A force template script to be rendered
-     * @param  Boolean     $ignoreIfRenderModeNotAvailable Ignore the rendering if specified render mode is not
-     *                                                     available if TRUE, use the default template otherwise
+     *
+     * @param RenderableInterface $content                        The object to be rendered
+     * @param string              $mode                           The rendering mode
+     * @param array               $params                         A force set of parameters
+     * @param string              $template                       A force template script to be rendered
+     * @param Boolean             $ignoreIfRenderModeNotAvailable Ignore the rendering if specified render mode is not
+     *                                                            available if TRUE, use the default template otherwise
+     *
      * @return string      The view script output
      */
-    public function render(RenderableInterface $content = null, $mode = null, $params = null, $template = null, $ignoreIfRenderModeNotAvailable = true)
-    {
+    public function render(
+        RenderableInterface $content = null,
+        $mode = null,
+        $params = null,
+        $template = null,
+        $ignoreIfRenderModeNotAvailable = true
+    ) {
         // Nothing to do
     }
 
@@ -706,7 +733,7 @@ abstract class AbstractRenderer implements RendererInterface
     public function reset()
     {
         $this->resetVars()
-             ->resetParams();
+            ->resetParams();
 
         $this->__render = null;
 
@@ -721,6 +748,7 @@ abstract class AbstractRenderer implements RendererInterface
      * @param string  $mode
      * @param Boolean $ignoreIfRenderModeNotAvailable Ignore the rendering if specified render mode is not
      *                                                available if TRUE, use the default template otherwise
+     *
      * @return AbstractRenderer The current renderer
      */
     public function setMode($mode = null, $ignoreIfRenderModeNotAvailable = true)
@@ -734,7 +762,8 @@ abstract class AbstractRenderer implements RendererInterface
     /**
      * @codeCoverageIgnore
      *
-     * @param  Page $node
+     * @param Page $node
+     *
      * @return AbstractRenderer
      */
     public function setNode(Page $node)
@@ -747,7 +776,8 @@ abstract class AbstractRenderer implements RendererInterface
     /**
      * Set the object to render.
      *
-     * @param  RenderableInterface $object
+     * @param RenderableInterface $object
+     *
      * @return AbstractRenderer   The current renderer
      */
     public function setObject(RenderableInterface $object = null)
@@ -769,7 +799,7 @@ abstract class AbstractRenderer implements RendererInterface
     /**
      * Set the current page.
      *
-     * @param  Page $page
+     * @param Page $page
      *
      * @return AbstractRenderer
      */
@@ -848,11 +878,17 @@ abstract class AbstractRenderer implements RendererInterface
         }
 
         if (false === file_exists($layoutfile) && false === touch($layoutfile)) {
-            throw new RendererException(sprintf('Unable to create file %s.', $layoutfile), RendererException::LAYOUT_ERROR);
+            throw new RendererException(
+                sprintf('Unable to create file %s.', $layoutfile),
+                RendererException::LAYOUT_ERROR
+            );
         }
 
         if (!is_writable($layoutfile)) {
-            throw new RendererException(sprintf('Unable to open file %s in writing mode.', $layoutfile), RendererException::LAYOUT_ERROR);
+            throw new RendererException(
+                sprintf('Unable to open file %s in writing mode.', $layoutfile),
+                RendererException::LAYOUT_ERROR
+            );
         }
 
         return $layoutfile;
@@ -901,7 +937,7 @@ abstract class AbstractRenderer implements RendererInterface
     public function createHelper($method, $argv)
     {
         $helper = null;
-        $helperClass = 'BackBee\Renderer\Helper\\'.$method;
+        $helperClass = 'BackBee\Renderer\Helper\\' . $method;
         if (true === class_exists($helperClass)) {
             $this->helpers->set($method, new $helperClass($this, $argv));
             $helper = $this->helpers->get($method);
@@ -918,7 +954,8 @@ abstract class AbstractRenderer implements RendererInterface
     /**
      * Return the relative path from the classname of an object.
      *
-     * @param  \BackBee\Renderer\RenderableInterface $object
+     * @param \BackBee\Renderer\RenderableInterface $object
+     *
      * @return string
      */
     protected function getTemplatePath(RenderableInterface $object)
