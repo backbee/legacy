@@ -36,6 +36,7 @@ use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
+use function dirname;
 
 /**
  * Class BundleLoader
@@ -604,13 +605,13 @@ class BundleLoader implements DumpableServiceInterface, DumpableServiceProxyInte
      * @param Config        $config
      * @param callable|null $recipe
      */
-    private function addClassContentDir(Config $config, callable $recipe = null)
+    private function addClassContentDir(Config $config, callable $recipe = null): void
     {
-        if (null !== $recipe) {
+        if ($recipe !== null) {
             $this->runRecipe($config, $recipe);
         } else {
             $directory = realpath(dirname($config->getBaseDir()) . DIRECTORY_SEPARATOR . 'ClassContent');
-            if (false !== $directory) {
+            if ($directory !== false) {
                 $this->application->unshiftClassContentDir($directory);
             }
         }

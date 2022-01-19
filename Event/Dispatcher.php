@@ -278,6 +278,8 @@ class Dispatcher extends EventDispatcher implements DumpableServiceInterface
      */
     protected function doDispatch($listeners, $eventName, sfEvent $event)
     {
+        //dump($listeners);
+
         foreach ($listeners as $listener) {
             $callable = array_shift($listener);
             if (true === is_string($callable)) {

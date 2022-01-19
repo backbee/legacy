@@ -29,6 +29,7 @@ use BackBee\Security\Token\BBUserToken;
 
 use Doctrine\ORM\Tools\Pagination\Paginator;
 
+use Exception;
 use Symfony\Component\Security\Core\Util\ClassUtils;
 
 /**
@@ -147,7 +148,7 @@ class ClassContentManager
             $pages = $this->entityManager->getRepository('BackBee\ClassContent\ContentSet')->findPagesByContent($content);
 
             if (count($pages) > 0) {
-                foreach($pages as $page) {
+                foreach ($pages as $page) {
                     if ($page instanceof Page) {
                         if (false !== $index = $page->getContentSet()->indexOf($content, true)) {
                             $zone = $page->getLayout()->getZone($index);
@@ -231,24 +232,46 @@ class ClassContentManager
      *
      * @return string[] An array that contains all classcontents classnames
      */
-    public function getAllClassContentClassnames()
+    public function getAllClassContentClassnames(): array
     {
-        if (null === $this->contentClassnames) {
+        if ($this->contentClassnames === null) {
             $cacheId = md5('all_classcontents_classnames_'.$this->app->getContext().'_'.$this->app->getEnvironment());
-            if (!$this->app->isDebugMode() && false !== $value = $this->cache->load($cacheId)) {
-                $this->contentClassnames = json_decode($value, true);
-            } else {
-                $this->contentClassnames = [AbstractClassContent::CLASSCONTENT_BASE_NAMESPACE . 'ContentSet'];
-                foreach ($this->app->getClassContentDir() as $directory) {
-                    $this->contentClassnames = array_merge(
-                            $this->contentClassnames,
-                            CategoryManager::getClassContentClassnamesFromDir($directory)
+            if (!$this->app->isDebugMode() && ($value = $this->cache->load($cacheId)) !== false) {
+                try {
+                    $this->contentClassnames = json_decode($value, true, 512, JSON_THROW_ON_ERROR);
+                } catch (Exception $exception) {
+                    $this->app->getLogging()->error(
+                        sprintf(
+                            '%s : %s :%s',
+                            __CLASS__,
+                            __FUNCTION__,
+                            $exception->getMessage()
+                        )
                     );
                 }
-
-                $this->cache->save($cacheId, json_encode($this->contentClassnames));
+            } else {
+                $this->contentClassnames = array_merge(
+                    [AbstractClassContent::CLASSCONTENT_BASE_NAMESPACE . 'ContentSet'],
+                    ...array_map(static function ($directory) {
+                        return CategoryManager::getClassContentClassnamesFromDir($directory);
+                    }, $this->app->getClassContentDir())
+                );
+                try {
+                    $this->cache->save($cacheId, json_encode($this->contentClassnames, JSON_THROW_ON_ERROR));
+                } catch (Exception $exception) {
+                    $this->app->getLogging()->error(
+                        sprintf(
+                            '%s : %s :%s',
+                            __CLASS__,
+                            __FUNCTION__,
+                            $exception->getMessage()
+                        )
+                    );
+                }
             }
         }
+
+        $this->contentClassnames = array_reverse($this->contentClassnames);
 
         return $this->contentClassnames;
     }
@@ -258,19 +281,19 @@ class ClassContentManager
      *
      * @return string[] Contains every BackBee's element classcontent classnames
      */
-    public function getAllElementClassContentClassnames()
+    public function getAllElementClassContentClassnames(): array
     {
         $classnames = array_filter(
             $this->getAllClassContentClassnames(),
-            function ($classname) {
-                return false !== strpos(
+            static function ($classname) {
+                return strpos(
                     $classname,
-                    AbstractClassContent::CLASSCONTENT_BASE_NAMESPACE.'Element\\'
-                );
+                    AbstractContent::CLASSCONTENT_BASE_NAMESPACE.'Element\\'
+                ) !== false;
             }
         );
 
-        $classnames[] = AbstractClassContent::CLASSCONTENT_BASE_NAMESPACE.'ContentSet';
+        $classnames[] = AbstractContent::CLASSCONTENT_BASE_NAMESPACE.'ContentSet';
 
         return $classnames;
     }

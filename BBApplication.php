@@ -193,7 +193,10 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
         }
 
         $this->initBundles();
-        $this->initializeApp();
+
+        if ($this->isRestored() === false) {
+            $this->initializeApp();
+        }
 
         if (!$this->getContainer()->has('em')) {
             $this->getLogging()->debug(
@@ -650,7 +653,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
      */
     public function getBaseRepository(): string
     {
-        if (null === $this->baseRepository) {
+        if ($this->baseRepository === null) {
             $this->baseRepository = $this->getBaseDir() . DIRECTORY_SEPARATOR . 'repository';
         }
 
@@ -667,7 +670,6 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
 
             array_unshift($this->classcontentDir, $this->getBBDir() . '/ClassContent');
             array_unshift($this->classcontentDir, $this->getBaseRepository() . '/ClassContent');
-            array_unshift($this->classcontentDir, StandaloneHelper::resDir() . DIRECTORY_SEPARATOR . 'classcontents');
 
             if ($this->hasContext()) {
                 array_unshift($this->classcontentDir, $this->getRepository() . '/ClassContent');
@@ -675,6 +677,8 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
 
             array_map([File::class, 'resolveFilepath'], $this->classcontentDir);
         }
+
+        //dump($this->classcontentDir);
 
         return $this->classcontentDir;
     }
@@ -1288,7 +1292,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
             $bundles = $this->container->getParameter('bundles');
 
             // Init BackBee bundles.
-            if (null !== $bundles && !$bundleLoader->isRestored()) {
+            if ($bundles !== null && !$bundleLoader->isRestored()) {
                 $bundleLoader->load($bundles);
             }
 
@@ -1366,7 +1370,7 @@ class BBApplication extends Kernel implements ApplicationInterface, DumpableServ
         if (is_file($eventsFilePath) && is_readable($eventsFilePath)) {
             $events = Yaml::parse(file_get_contents($eventsFilePath));
 
-            if (true === is_array($events)) {
+            if (is_array($events) === true) {
                 $this->getEventDispatcher()->addListeners($events);
             }
         }
