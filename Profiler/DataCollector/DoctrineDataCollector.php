@@ -273,11 +273,13 @@ class DoctrineDataCollector extends DataCollector implements ContainerAwareInter
             }
         }
         // Walk the array to see if we can add single-quotes to strings
-        array_walk($values, create_function('&$v, $k', 'if (!is_numeric($v) && $v!="NULL") $v = "\'".$v."\'";'));
+        array_walk($values, static function (&$v) {
+            if (!is_numeric($v) && $v !== "NULL") {
+                $v = "\'".$v."\'";
+            }
+        });
 
-        $query = preg_replace($keys, $values, $query, 1);
-
-        return $query;
+        return preg_replace($keys, $values, $query, 1);
     }
 
     /**
