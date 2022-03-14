@@ -285,3 +285,9 @@ services:
         calls:
             - [ setDefinitionsFromConfig, [ @config ] ]
             - [ setEntityManager, [ @em ] ]
+
+    # Bundle
+    core.bundle.manager:
+        class: BackBee\Bundle\BundleManager
+        arguments:
+            [ '@bbapp', '@routing' ]
