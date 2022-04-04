@@ -21,6 +21,17 @@
 
 namespace BackBee\Rest\Controller;
 
+use BackBee\Event\Event;
+use BackBee\Rest\Controller\Annotations as Rest;
+use BackBee\Rest\Exception\ValidationException;
+use BackBee\Rest\Patcher\EntityPatcher;
+use BackBee\Rest\Patcher\Exception\InvalidOperationSyntaxException;
+use BackBee\Rest\Patcher\OperationSyntaxValidator;
+use BackBee\Rest\Patcher\RightManager;
+use BackBee\Security\Group;
+use BackBee\Security\Token\BBUserToken;
+use BackBee\Security\User;
+use BackBeeCloud\Security\User\UserDataFormatter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,16 +42,6 @@ use Symfony\Component\Security\Core\Exception\InsufficientAuthenticationExceptio
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validation;
 
-use BackBee\Event\Event;
-use BackBee\Rest\Controller\Annotations as Rest;
-use BackBee\Rest\Exception\ValidationException;
-use BackBee\Rest\Patcher\EntityPatcher;
-use BackBee\Rest\Patcher\Exception\InvalidOperationSyntaxException;
-use BackBee\Rest\Patcher\OperationSyntaxValidator;
-use BackBee\Rest\Patcher\RightManager;
-use BackBee\Security\Token\BBUserToken;
-use BackBee\Security\User;
-
 /**
  * User Controller.
  *
@@ -48,83 +49,92 @@ use BackBee\Security\User;
  *
  * @copyright   Lp digital system
  * @author      k.golovin
+ * @author      Djoudi Bensid <d.bensid@obione.eu>
  */
 class UserController extends AbstractRestController
 {
     /**
      * Get all records.
      *
-     *
      * @Rest\QueryParam(name = "limit", default="100", description="Max results", requirements = {
-     *  @Assert\Range(max=1000, min=1, minMessage="The value should be between 1 and 1000", maxMessage="The value should be between 1 and 1000"),
+     *  @Assert\Range(
+     *     max=1000,
+     *     min=1,
+     *     minMessage="The value should be between 1 and 1000",
+     *     maxMessage="The value should be between 1 and 1000"
+     *  ),
      * })
      *
      * @Rest\QueryParam(name = "start", default="0", description="Offset", requirements = {
      *  @Assert\Type(type="digit", message="The value should be a positive number"),
      * })
      */
-    public function getCollectionAction(Request $request)
+    public function getCollectionAction(Request $request): JsonResponse
     {
         if (!$this->isGranted('IS_AUTHENTICATED_FULLY')) {
             throw new InsufficientAuthenticationException('You must be authenticated to access');
         }
 
-        if (!$this->isGranted('VIEW', new ObjectIdentity('class', get_class($this->getUser())))) {
-            throw new InsufficientAuthenticationException(sprintf('You are not authorized to view users'));
+        if (!$this->isGranted('VIEW', new ObjectIdentity('class', User::class))) {
+            throw new InsufficientAuthenticationException('You are not authorized to view users');
         }
 
-        $group = $request->query->get('groups', null);
-
-        if ($group !== null) {
-            $group = $this->getEntityManager()->find('BackBee\Security\Group', $group);
+        if (($groupId = $request->query->get('groups')) !== null &&
+            $group = $this->getEntityManager()->getRepository(Group::class)->find($groupId)
+        ) {
             $users = $group->getUsers();
         } elseif (count($request->query->all()) !== 0) {
-            $users = $this->getEntityManager()
-                        ->getRepository(get_class($this->getUser()))
-                        ->getCollection($request->query->all());
+            $users = $this->getEntityManager()->getRepository(User::class)->getCollection($request->query->all());
         } else {
-            $users = $this->getEntityManager()->getRepository(get_class($this->getUser()))->findAll();
+            $users = $this->getEntityManager()->getRepository(User::class)->findAll();
         }
 
-        return new Response($this->formatCollection($users), 200, ['Content-Type' => 'application/json']);
+        $bbUser = $this->getUser();
+
+        return new JsonResponse(
+            array_map(static function ($user) use ($bbUser) {
+                return UserDataFormatter::format($user, $bbUser);
+            }, $users)
+        );
     }
 
     /**
      * GET current User.
      */
-    public function getCurrentAction()
+    public function getCurrentAction(): JsonResponse
     {
         if (!$this->isGranted('IS_AUTHENTICATED_FULLY')) {
             throw new InsufficientAuthenticationException('You must be authenticated to access');
         }
 
-        $user = $this->getEntityManager()->find(get_class($this->getUser()), $this->getUser()->getId());
+        if ($user = $this->getEntityManager()->getRepository(User::class)->find($this->getUser()->getId())) {
+            return new JsonResponse(UserDataFormatter::format($user, $this->getUser()));
+        }
 
-        return new Response($this->formatItem($user), 200, ['Content-Type' => 'application/json']);
+        return new JsonResponse('Cannot retrieve the current user', Response::HTTP_NOT_FOUND);
     }
 
     /**
      * GET User.
      *
-     * @param int $id User ID
+     * @param string $id User ID
      */
-    public function getAction($id)
+    public function getAction(string $id): JsonResponse
     {
         if (!$this->isGranted('IS_AUTHENTICATED_FULLY')) {
             throw new InsufficientAuthenticationException('You must be authenticated to delete users');
         }
 
-        $user = $this->getEntityManager()->find(get_class($this->getUser()), $id);
-
-        if (!$user) {
-            return $this->create404Response(sprintf('User not found with id %d', $id));
+        if ($user = $this->getEntityManager()->getRepository(User::class)->find($id)) {
+            if (!$this->isGranted('VIEW', $user)) {
+                throw new InsufficientAuthenticationException(
+                    sprintf('You are not authorized to view user with id %s', $id)
+                );
+            }
+            return new JsonResponse(UserDataFormatter::format($user, $this->getUser()));
         }
 
-        if (!$this->isGranted('VIEW', $user)) {
-            throw new InsufficientAuthenticationException(sprintf('You are not authorized to view user with id %s', $id));
-        }
-
-        return new Response($this->formatItem($user), 200, ['Content-Type' => 'application/json']);
+        return new JsonResponse(sprintf('User not found with id %d', $id), Response::HTTP_NOT_FOUND);
     }
 
     /**
@@ -149,7 +159,9 @@ class UserController extends AbstractRestController
         }
 
         if (!$this->isGranted('DELETE', $user)) {
-            throw new InsufficientAuthenticationException(sprintf('You are not authorized to delete user with id %s', $id));
+            throw new InsufficientAuthenticationException(
+                sprintf('You are not authorized to delete user with id %s', $id)
+            );
         }
 
         $this->getEntityManager()->remove($user);
@@ -165,11 +177,10 @@ class UserController extends AbstractRestController
         $token->setUser($request->request->get('username'));
         $token->setCreated($created);
         $token->setNonce(md5(uniqid('', true)));
-        $token->setDigest(md5($token->getNonce().$created.md5($password)));
+        $token->setDigest(md5($token->getNonce() . $created . md5($password)));
 
         $tokenAuthenticated = $this->getApplication()->getSecurityContext()->getAuthenticationManager()
-            ->authenticate($token)
-        ;
+            ->authenticate($token);
 
         $this->getApplication()->getSecurityContext()->setToken($tokenAuthenticated);
     }
@@ -201,7 +212,9 @@ class UserController extends AbstractRestController
         }
 
         if (!$this->isGranted('EDIT', $user)) {
-            throw new InsufficientAuthenticationException(sprintf('You are not authorized to view user with id %s', $id));
+            throw new InsufficientAuthenticationException(
+                sprintf('You are not authorized to view user with id %s', $id)
+            );
         }
 
         $user = $this->deserializeEntity($request->request->all(), $user);
@@ -242,12 +255,14 @@ class UserController extends AbstractRestController
         }
 
         $userExists = $this->getApplication()
-                           ->getEntityManager()
-                           ->getRepository(get_class($this->getUser()))
-                           ->findBy(array('_login' => $request->request->get('login')));
+            ->getEntityManager()
+            ->getRepository(get_class($this->getUser()))
+            ->findBy(array('_login' => $request->request->get('login')));
 
         if ($userExists) {
-            throw new ConflictHttpException(sprintf('User with that login already exists: %s', $request->request->get('login')));
+            throw new ConflictHttpException(
+                sprintf('User with that login already exists: %s', $request->request->get('login'))
+            );
         }
 
         $user = new User();
@@ -305,7 +320,7 @@ class UserController extends AbstractRestController
         try {
             (new OperationSyntaxValidator())->validate($operations);
         } catch (InvalidOperationSyntaxException $e) {
-            throw new BadRequestHttpException('operation invalid syntax: '.$e->getMessage());
+            throw new BadRequestHttpException('operation invalid syntax: ' . $e->getMessage());
         }
 
         $entity_patcher = new EntityPatcher(new RightManager($this->getSerializer()->getMetadataFactory()));
@@ -335,6 +350,7 @@ class UserController extends AbstractRestController
         foreach ($operations as $key => $operation) {
             $op[substr($operation['path'], 1)] = $operation['value'];
         }
+
         return $op;
     }
 
@@ -343,12 +359,14 @@ class UserController extends AbstractRestController
         $user = $this->getEntityManager()->find(get_class($this->getUser()), $id);
 
         if (!$this->isGranted('EDIT', $user)) {
-            throw new InsufficientAuthenticationException(sprintf('You are not authorized to edit user with id %s', $id));
+            throw new InsufficientAuthenticationException(
+                sprintf('You are not authorized to edit user with id %s', $id)
+            );
         }
 
         $operation = reset($operations);
 
-        $user->setActivated((boolean) $operation['value']);
+        $user->setActivated((boolean)$operation['value']);
         $this->getEntityManager()->persist($user);
         $this->getEntityManager()->flush($user);
 
@@ -360,7 +378,9 @@ class UserController extends AbstractRestController
         $user = $this->getEntityManager()->find(get_class($this->getUser()), $id);
 
         if (!$this->isGranted('EDIT', $user)) {
-            throw new InsufficientAuthenticationException(sprintf('You are not authorized to edit user with id %s', $id));
+            throw new InsufficientAuthenticationException(
+                sprintf('You are not authorized to edit user with id %s', $id)
+            );
         }
 
         $operations = $this->flattenPatchRequest($operations);
@@ -371,7 +391,7 @@ class UserController extends AbstractRestController
 
                 if ($value == 'added') {
                     $group->addUser($user);
-                } else if ($value == 'removed') {
+                } elseif ($value == 'removed') {
                     $group->removeUser($user);
                 }
 
