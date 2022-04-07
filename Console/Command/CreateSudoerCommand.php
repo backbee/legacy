@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -33,7 +33,7 @@ use BackBee\Console\AbstractCommand;
  *
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ *
  * @author      Bogdan Oanes <bogdan.oanes@lp-digital.fr>
  */
 class CreateSudoerCommand extends AbstractCommand
@@ -91,9 +91,9 @@ EOF
             ->init($input, $output)
             ->runInsertSudoerProcess()
 	;
-    }       
+    }
 
-    /** 
+    /**
      * Init main tools
      *
      * @return CreateSudoerCommand
@@ -114,7 +114,7 @@ EOF
      *
      * @return CreateSudoerCommand
      */
-    protected function runInsertSudoerProcess() 
+    protected function runInsertSudoerProcess()
     {
         if (!$this->input->getOption('user_name') || !$this->input->getOption('user_password') || !$this->input->getOption('user_email')) {
             $this->output->writeln('<info>You have to specify all option in order to insert a new superadmin user (--user_name, --user_password, --user_email)</info>');

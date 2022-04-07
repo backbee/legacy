@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -26,7 +26,7 @@ use BackBee\NestedNode\Page;
 /**
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ *
  * @author      c.rouillon <charles.rouillon@lp-digital.fr>
  */
 interface MetaDataResolverInterface
@@ -41,9 +41,9 @@ interface MetaDataResolverInterface
 
     /**
      * Returns computed metadata from provided $page.
-     * 
+     *
      * @param  Page|NULL $page
-     * 
+     *
      * @return MetaDataBag
      */
     public function resolve(Page $page = null);

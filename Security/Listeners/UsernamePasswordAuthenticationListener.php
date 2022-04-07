@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -35,7 +35,7 @@ use BackBee\Security\Token\UsernamePasswordToken;
 /**
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ *
  * @author      c.rouillon <charles.rouillon@lp-digital.fr>
  */
 class UsernamePasswordAuthenticationListener implements ListenerInterface
@@ -71,7 +71,7 @@ class UsernamePasswordAuthenticationListener implements ListenerInterface
                 if (null !== $this->_logger) {
                     $this->_logger->info(sprintf('Authentication request succeed for user "%s"', $token->getUsername()));
                 }
-                
+
                 $loginEvent = new InteractiveLoginEvent($request, $token);
                 $event->getDispatcher()
                         ->dispatch(SecurityEvents::INTERACTIVE_LOGIN, $loginEvent);

@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -25,26 +25,26 @@ use BackBee\ClassContent\AbstractContent;
 
 /**
  * Iconizer returning the first not null URI returned by one of the chained iconizers.
- * 
+ *
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ *
  * @author      Charles Rouillon <charles.rouillon@lp-digital.fr>
  */
 class ChainIconizer implements IconizerInterface
 {
     /**
      * The chained inconizers.
-     * 
+     *
      * @var IconizerInterface[]
      */
     private $iconizers;
 
     /**
      * Class constructor.
-     * 
+     *
      * @param IconizerInterface[] $iconizers The chained iconizers.
-     * 
+     *
      * @throws \InvalidArgumentException     Raises if one element of the chain isn't an IconizerInterface.
      */
     public function __construct(array $iconizers)
@@ -60,9 +60,9 @@ class ChainIconizer implements IconizerInterface
 
     /**
      * Returns the URL of the icon of the provided content.
-     * 
+     *
      * @param  AbstractContent $content The content.
-     * 
+     *
      * @return string|null              The icon URL if found.
      */
     public function getIcon(AbstractContent $content)
@@ -71,7 +71,7 @@ class ChainIconizer implements IconizerInterface
         foreach ($this->iconizers as $iconizer) {
             if (null !== $iconUri = $iconizer->getIcon($content)) {
                 break;
-            }            
+            }
         }
         return $iconUri;
     }

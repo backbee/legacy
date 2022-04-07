@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -40,7 +40,7 @@ use BackBee\Console\AbstractCommand;
  *
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ *
  * @author      k.golovin
  */
 class ApplicationUpdateCommand extends AbstractCommand
@@ -252,7 +252,7 @@ EOF
 
     /**
      * Insures the name of the altered table is quoted according to the platform/
-     * 
+     *
      * @param SchemaAlterTableEventArgs $args
      */
     public function onSchemaAlterTable(SchemaAlterTableEventArgs $args)

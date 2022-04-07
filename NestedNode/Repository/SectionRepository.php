@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -32,7 +32,7 @@ use BackBee\Util\Collection\Collection;
  *
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ * 
  * @author      c.rouillon <charles.rouillon@lp-digital.fr>
  */
 class SectionRepository extends NestedNodeRepository
@@ -221,7 +221,7 @@ class SectionRepository extends NestedNodeRepository
      * @param  Section $node     The section to be moved.
      * @param  Section $dest     The targetted section in tree.
      * @param  string  $position Either 'after', 'before', 'firstin', 'lastin'.
-     * 
+     *
      * @return Section
      */
     public function moveNode(Section $node, Section $dest, $position)

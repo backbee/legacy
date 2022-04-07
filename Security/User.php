@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -33,7 +33,7 @@ use BackBee\Security\Acl\Domain\AbstractObjectIdentifiable;
  *
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ *
  * @author      m.baptista <michel.baptista@lp-digital.fr>
  *
  * @Serializer\ExclusionPolicy("all")
@@ -513,7 +513,7 @@ class User extends AbstractObjectIdentifiable implements ApiUserInterface
      */
     public function eraseCredentials()
     {
-        
+
     }
 
     /**

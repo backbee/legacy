@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -43,7 +43,6 @@ use Doctrine\ORM\Mapping as ORM;
  *
  * @category    BackBee
  *
- * @copyright   Lp digital system
  * @author      c.rouillon <charles.rouillon@lp-digital.fr>
  * @ORM\Entity(repositoryClass="BackBee\ClassContent\Repository\ClassContentRepository")
  * @ORM\Table(

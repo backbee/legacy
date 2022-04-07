@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -38,7 +38,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  *
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ *
  * @author      k.golovin
  */
 class SecurityController extends AbstractRestController

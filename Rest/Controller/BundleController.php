@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -44,7 +44,7 @@ use BackBee\Rest\Patcher\RightManager;
  *
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ * 
  * @author      e.chau <eric.chau@lp-digital.fr>
  * @author      Mickaël Andrieu <mickael.andrieu@lp-digital.fr>
  * @author      Djoudi Bensid <djoudi.bensid@lp-digital.fr>
@@ -61,7 +61,7 @@ class BundleController extends AbstractRestController
         $application = $this->getApplication();
 
         $bundles = [];
-        
+
         foreach ($this->getApplication()->getBundles() as $bundle) {
             if ($this->isGranted('EDIT', $bundle) || ($bundle->isEnabled() && $this->isGranted('VIEW', $bundle))) {
                 $bundles[] = $bundle;

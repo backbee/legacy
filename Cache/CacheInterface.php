@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -28,7 +28,7 @@ use Psr\Log\LoggerInterface;
  *
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ * 
  * @author      Mickaël Andrieu <mickael.andrieu@lp-digital.fr>
  */
 interface CacheInterface

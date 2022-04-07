@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -31,14 +31,14 @@ use BackBee\NestedNode\Page;
  *
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ * 
  * @author      c.rouillon <charles.rouillon@lp-digital.fr>
  */
 class RewritingListener
 {
     /**
      * Stores uids of the pages already computed.
-     * 
+     *
      * @var string[]
      */
     static private $alreadyDone = [];

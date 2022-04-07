@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -32,8 +32,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Upgrade stored descriminators on content to use short classname
  *
  * @category    BackBee
- * 
- * @copyright   Lp digital system
+ *
+ *
  * @author      c.rouillon <charles.rouillon@lp-digital.fr>
  */
 class UpgradeToShortClassnameCommand extends AbstractCommand
@@ -41,7 +41,7 @@ class UpgradeToShortClassnameCommand extends AbstractCommand
 
     /**
      * Output interface
-     * @var \Symfony\Component\Console\Output\OutputInterface 
+     * @var \Symfony\Component\Console\Output\OutputInterface
      */
     private $output;
 
@@ -90,7 +90,7 @@ EOF
 
     /**
      * Updates the `content` table.
-     * 
+     *
      * @return UpgradeToShortClassnameCommand
      */
     private function updateContentTable()
@@ -104,7 +104,7 @@ EOF
 
     /**
      * Updates the `revision` table.
-     * 
+     *
      * @return UpgradeToShortClassnameCommand
      */
     private function updateRevisionTable()
@@ -118,7 +118,7 @@ EOF
 
     /**
      * Updates the `opt_content_modified` table.
-     * 
+     *
      * @return UpgradeToShortClassnameCommand
      */
     private function updateOptContentModifiedTable()
@@ -132,15 +132,15 @@ EOF
 
     /**
      * Executes an update query and output the number of affected rows.
-     * 
+     *
      * @param  string   $table      The table to update
      * @param  string   $field      The field to update
-     * 
+     *
      * @return UpgradeToShortClassnameCommand
      */
     private function executeUpdate($table, $field)
     {
-        $result = $this->em->getConnection()->executeUpdate($this->getReplaceQuery($table, $field));        
+        $result = $this->em->getConnection()->executeUpdate($this->getReplaceQuery($table, $field));
         $this->output->writeln(sprintf(' - %d rows updated in `%s`.', $result, $table));
 
         return $this;
@@ -148,17 +148,17 @@ EOF
 
     /**
      * Computes the SQL query to search/replace on $field in $table
-     * 
+     *
      * @param  string   $table      The table to update
      * @param  string   $field      The field to update
-     * 
+     *
      * @return string               The SQL query
      */
     private function getReplaceQuery($table, $field)
     {
         return sprintf(
-            'UPDATE %s SET %s = REPLACE(%s, "%s", "%s") WHERE 1=1', 
-            $table, 
+            'UPDATE %s SET %s = REPLACE(%s, "%s", "%s") WHERE 1=1',
+            $table,
             $field,
             $field,
             str_replace('\\', '\\\\', AbstractContent::CLASSCONTENT_BASE_NAMESPACE),

@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -25,19 +25,19 @@ use BackBee\ClassContent\AbstractContent;
 
 /**
  * Interface implements by all content iconizer.
- * 
+ *
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ * 
  * @author      Charles Rouillon <charles.rouillon@lp-digital.fr>
  */
 interface IconizerInterface
 {
     /**
      * Returns the URL of the icon of the provided content.
-     * 
+     *
      * @param  AbstractContent $content The content.
-     * 
+     *
      * @return string|null              The icon URL if found.
      */
     public function getIcon(AbstractContent $content);

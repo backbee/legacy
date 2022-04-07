@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -38,8 +38,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Upgrade data structure adding section support
  *
  * @category    BackBee
- * 
- * @copyright   Lp digital system
+ *
+ *
  * @author      c.rouillon <charles.rouillon@lp-digital.fr>
  */
 class UpgradeToPageSectionCommand extends AbstractCommand
@@ -59,7 +59,7 @@ class UpgradeToPageSectionCommand extends AbstractCommand
 
     /**
      * Output interface
-     * @var \Symfony\Component\Console\Output\OutputInterface 
+     * @var \Symfony\Component\Console\Output\OutputInterface
      */
     private $output;
 
@@ -128,7 +128,7 @@ EOF
 
     /**
      * Checks for BackBee version, at least 1.1.0 is required
-     * 
+     *
      * @return \BackBee\Console\Command\UpgradeToPageSectionCommand
      * @throws BBException                                              Raises if version is previous to 1.1.0
      */
@@ -148,7 +148,7 @@ EOF
 
     /**
      * Checks for existing table `section`, throw exception if overrideExisting is set to FALSE
-     * 
+     *
      * @return \BackBee\Console\Command\UpgradeToPageSectionCommand
      * @throws BBException                                              Raises if table `section` already exists
      */
@@ -175,7 +175,7 @@ EOF
 
     /**
      * Checks for required fields in table `page`
-     * 
+     *
      * @return \BackBee\Console\Command\UpgradeToPageSectionCommand
      * @throws BBException                                              Raises if table `page` doesn't exists or is incomplete
      */
@@ -208,8 +208,8 @@ EOF
         if (0 < count($missingFields)) {
             $this->output->writeln("<error>Failed</error>");
             throw new BBException(sprintf(
-                    'Following required fields are missing in table `%s`: `%s`.%s Cannot upgrade database storage anymore.', 
-                    $tableName, 
+                    'Following required fields are missing in table `%s`: `%s`.%s Cannot upgrade database storage anymore.',
+                    $tableName,
                     implode('`, `', $missingFields), PHP_EOL)
                 );
         }
@@ -231,9 +231,9 @@ EOF
 
     /**
      * Updates nested data from existing pages
-     * 
+     *
      * @param  string       $classname
-     * 
+     *
      * @return \BackBee\Console\Command\UpgradeToPageSectionCommand
      */
     private function updateNodes($classname)
@@ -269,7 +269,7 @@ EOF
 
     /**
      * Creates or updates (if $this->overrideExisting set to TRUE) tbe section and populates it
-     * 
+     *
      * @return \BackBee\Console\Command\UpgradeToPageSectionCommand
      */
     private function updateSectionTable()
@@ -308,7 +308,7 @@ EOF
                 $sectionMeta->getSingleAssociationJoinColumnName('_page'),
                 $this->requiredFields['site_uid']
         );
-        
+
         $pageMeta = $this->em->getClassMetadata('BackBee\NestedNode\Page');
         $tablePage = $pageMeta->getTableName();
 
@@ -354,7 +354,7 @@ EOF
                 $this->requiredFields['leftnode']
         );
         $this->em->getConnection()->executeUpdate($queryS);
-        
+
         $queryP = sprintf('UPDATE %s SET %s = %s, %s = %s WHERE %s = %s + 1',
                 $tablePage,
                 $sectionField,
@@ -366,22 +366,22 @@ EOF
         );
         $this->em->getConnection()->executeUpdate($queryP);
         $this->em->getConnection()->executeUpdate('SET FOREIGN_KEY_CHECKS=1');
-        
+
         return $this;
     }
 
     /**
      * Returns the number of nested nodes
-     * 
+     *
      * @param string $classname
-     * 
+     *
      * @return int
      */
     private function countNodes($classname)
     {
         $query = sprintf(
-                'SELECT COUNT(%s) FROM %s', 
-                $this->requiredFields['uid'], 
+                'SELECT COUNT(%s) FROM %s',
+                $this->requiredFields['uid'],
                 $this->em->getClassMetadata($classname)->getTableName()
         );
 
@@ -394,19 +394,19 @@ EOF
 
     /**
      * Retrieves root nodes for $site
-     * 
+     *
      * @param  Site     $site           The site we are looking for root nodes
      * @param  string   $classname
-     * 
+     *
      * @return array                    The root nodes found
      */
     private function getPageRoot(Site $site, $classname)
     {
         $query = sprintf(
-                'SELECT %s FROM %s WHERE %s = ? AND %s IS NULL', 
-                $this->requiredFields['uid'], 
-                $this->em->getClassMetadata($classname)->getTableName(), 
-                $this->requiredFields['site_uid'], 
+                'SELECT %s FROM %s WHERE %s = ? AND %s IS NULL',
+                $this->requiredFields['uid'],
+                $this->em->getClassMetadata($classname)->getTableName(),
+                $this->requiredFields['site_uid'],
                 $this->requiredFields['parent_uid']
         );
 
@@ -417,12 +417,12 @@ EOF
 
     /**
      * Updates nodes information of a tree
-     * 
+     *
      * @param  string   $nodeUid        The starting point in the tree
      * @param  string   $classname
      * @param  int      $leftnode       Optional, the first value of left node
      * @param  int      $level          Optional, the first value of level
-     * 
+     *
      * @return \StdClass
      */
     private function updateTreeNatively($nodeUid, $classname, $leftnode = 1, $level = 0)
@@ -453,18 +453,18 @@ EOF
 
     /**
      * Returns number of the children of $nodeUid
-     * 
+     *
      * @param  string   $nodeUid        The node uid to look for children
      * @param  string   $classname
-     * 
+     *
      * @return array
      */
     private function getCountChildren($nodeUid, $classname)
     {
         $query = sprintf(
-                'SELECT COUNT(%s) FROM %s WHERE %s = ?', 
-                $this->requiredFields['uid'], 
-                $this->em->getClassMetadata($classname)->getTableName(), 
+                'SELECT COUNT(%s) FROM %s WHERE %s = ?',
+                $this->requiredFields['uid'],
+                $this->em->getClassMetadata($classname)->getTableName(),
                 $this->requiredFields['parent_uid']
         );
 
@@ -477,20 +477,20 @@ EOF
 
     /**
      * Returns an array of uid of the children of $nodeUid
-     * 
+     *
      * @param  string   $nodeUid       The node uid to look for children
      * @param  string   $classname
      * @param  int      $start
      * @param  int      $limit
-     * 
+     *
      * @return array
      */
     private function getNodeChildren($nodeUid, $classname, $start = 0, $limit = 1000)
     {
         $query = sprintf(
-                'SELECT %s FROM %s WHERE %s = ? ORDER BY %s ASC, %s DESC LIMIT %d, %d', 
-                $this->requiredFields['uid'], 
-                $this->em->getClassMetadata($classname)->getTableName(), 
+                'SELECT %s FROM %s WHERE %s = ? ORDER BY %s ASC, %s DESC LIMIT %d, %d',
+                $this->requiredFields['uid'],
+                $this->em->getClassMetadata($classname)->getTableName(),
                 $this->requiredFields['parent_uid'],
                 $this->requiredFields['leftnode'],
                 $this->requiredFields['modified'],
@@ -507,7 +507,7 @@ EOF
 
     /**
      * Updates nodes information for $nodeUid
-     * 
+     *
      * @param  string   $nodeUid
      * @param  int      $leftnode
      * @param  int      $rightnode
@@ -520,11 +520,11 @@ EOF
         $progress->advance();
 
         $query = sprintf(
-                'UPDATE %s SET %s = ?, %s = ?, %s = ? WHERE %s = ?', 
-                $this->em->getClassMetadata($classname)->getTableName(), 
-                $this->requiredFields['leftnode'], 
-                $this->requiredFields['rightnode'], 
-                $this->requiredFields['level'], 
+                'UPDATE %s SET %s = ?, %s = ?, %s = ? WHERE %s = ?',
+                $this->em->getClassMetadata($classname)->getTableName(),
+                $this->requiredFields['leftnode'],
+                $this->requiredFields['rightnode'],
+                $this->requiredFields['level'],
                 $this->requiredFields['uid']
         );
 
@@ -534,7 +534,7 @@ EOF
             $level,
             $nodeUid,
         );
-        
+
         $types = array(
             Type::INTEGER,
             Type::INTEGER,

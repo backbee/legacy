@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -35,7 +35,7 @@ use BackBee\Util\File\File;
  *
  * @category    BackBee
  * @package     BackBee\Rest
- * @copyright   Lp digital system
+ * 
  * @author      f.kroockmann <florian.kroockmann@lp-digital.fr>
  * @author      Mickaël Andrieu <mickael.andrieu@lp-digital.fr>
  */

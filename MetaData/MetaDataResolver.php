@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -58,7 +58,7 @@ use Doctrine\ORM\EntityManager;
  *
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ *
  * @author      c.rouillon <charles.rouillon@lp-digital.fr>
  */
 class MetaDataResolver implements MetaDataResolverInterface
@@ -188,8 +188,8 @@ class MetaDataResolver implements MetaDataResolverInterface
                     && null !== $page->getTitle()
                     && array_key_exists('default', $attrvalue)
             ) {
-                $scheme = $page->getTitle();		
-            } elseif (array_key_exists('default', $attrvalue)) {		
+                $scheme = $page->getTitle();
+            } elseif (array_key_exists('default', $attrvalue)) {
                 $scheme = $attrvalue['default'];
             }
 
@@ -330,7 +330,7 @@ class MetaDataResolver implements MetaDataResolverInterface
     /**
      * Sets the main node value of $content to $page.
      * Recompute $content if need.
-     * 
+     *
      * @param AbstractClassContent $content
      * @param Page                 $page
      */

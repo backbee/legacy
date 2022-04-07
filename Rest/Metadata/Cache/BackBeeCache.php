@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -30,7 +30,7 @@ use Metadata\ClassMetadata;
  *
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ *
  * @author      Charles Rouillon <charles.rouillon@lp-digital.fr>
  */
 class BackBeeCache implements CacheInterface
@@ -39,8 +39,8 @@ class BackBeeCache implements CacheInterface
 
     /**
      * BackBee cache service
-     * 
-     * @var AbstractCache 
+     *
+     * @var AbstractCache
      */
     private $cache;
 
@@ -74,7 +74,7 @@ class BackBeeCache implements CacheInterface
 
         $cacheId = md5(self::CACHE_PREFIX.$class->name);
         if (false !== $content = $this->cache->load($cacheId)) {
-            return unserialize($content); 
+            return unserialize($content);
         }
     }
 
@@ -100,5 +100,5 @@ class BackBeeCache implements CacheInterface
     {
         $cacheId = md5(self::CACHE_PREFIX.$class->name);
         $this->cache->remove($cacheId);
-    }    
+    }
 }

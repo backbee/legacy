@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -33,7 +33,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  *
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ *
  * @author      c.rouillon <charles.rouillon@lp-digital.fr>
  */
 class IndexationListener implements EventSubscriberInterface
@@ -209,7 +209,7 @@ class IndexationListener implements EventSubscriberInterface
 
     /**
      * Indexes $content according to the class content property `indexation`.
-     * 
+     *
      * @param AbstractClassContent $content The content to index.
      */
     private static function indexContent(AbstractClassContent $content)
@@ -236,7 +236,7 @@ class IndexationListener implements EventSubscriberInterface
 
     /**
      * Reindexes parent content of $content.
-     * 
+     *
      * @param AbstractClassContent $content The content to index.
      */
     private static function updateSuperContentIndexes(AbstractClassContent $content)
@@ -263,10 +263,10 @@ class IndexationListener implements EventSubscriberInterface
 
     /**
      * Returns the indexed value.
-     * 
+     *
      * @param  AbstractClassContent $content      The content flushed.
      * @param  string               $indexedField The parameter to index.
-     * 
+     *
      * @return array                              An array of the value and the content owner.
      */
     private static function getIndexValue(AbstractClassContent $content, $indexedField)
@@ -282,9 +282,9 @@ class IndexationListener implements EventSubscriberInterface
 
     /**
      * Returns TRUE if something has to be indexed for $content.
-     * 
+     *
      * @param  AbstractClassContent $content The content to index.
-     * 
+     *
      * @return boolean
      */
     private static function hasIndexedElements(AbstractClassContent $content)
@@ -294,10 +294,10 @@ class IndexationListener implements EventSubscriberInterface
 
     /**
      * Returns the indexed parameter value.
-     * 
+     *
      * @param  AbstractClassContent $content      The content flushed.
      * @param  string               $indexedParam The parameter to index.
-     * 
+     *
      * @return array                              An array of the parameter value and the content owner.
      */
     private static function getParamValue(AbstractClassContent $content, $indexedParam)
@@ -310,10 +310,10 @@ class IndexationListener implements EventSubscriberInterface
 
     /**
      * Returns the indexed value of an element.
-     * 
+     *
      * @param  AbstractClassContent $content        The content flushed.
      * @param  string               $indexedElement The parameter to index.
-     * 
+     *
      * @return array                                An array of the element value and the content owner.
      */
     private static function getContentValue(AbstractClassContent $content, $indexedElement)
@@ -338,10 +338,10 @@ class IndexationListener implements EventSubscriberInterface
 
     /**
      * Applies callbacks to value.
-     * 
+     *
      * @param  mixed $value     The value on which apply callbacks.
      * @param  array $callbacks An array of callable function.
-     * 
+     *
      * @return mixed            The new value.
      */
     private static function applyCallbacks($value, array $callbacks)

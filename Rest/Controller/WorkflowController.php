@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2011-2021 Lp Digital
+ * Copyright (c) 2022 Obione
  *
  * This file is part of BackBee Standalone.
  *
@@ -30,7 +30,7 @@ use BackBee\Rest\Controller\Annotations as Rest;
 /**
  * @category    BackBee
  *
- * @copyright   Lp digital system
+ *
  * @author      Djoudi Bensid <djoudi.bensid@lp-digital.fr>
  */
 class WorkflowController extends AbstractRestController

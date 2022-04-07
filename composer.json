@@ -5,8 +5,7 @@
         "CMS",
         "Core",
         "Content Management",
-        "No backend CMS",
-        "User Management"
+        "No backend CMS"
     ],
     "type": "library",
     "license": "GPL-3.0+",
@@ -16,12 +15,12 @@
             "email": "charles.rouillon@lp-digital.fr"
         },
         {
-            "name": "Chau Eric",
-            "email": "eric.chau@lp-digital.fr"
+            "name": "Djoudi Bensid",
+            "email": "d.bensid@obione.eu"
         },
         {
-            "name": "Djoudi Bensid",
-            "email": "djoudi.bensid@lp-digital.fr"
+            "name": "Chau Eric",
+            "email": "eric.chau@lp-digital.fr"
         },
         {
             "name": "Mickaël Andrieu",
@@ -41,7 +40,7 @@
         }
     ],
     "require": {
-        "php": ">=7.1",
+        "php": ">=7.2",
         "doctrine/orm": "v2.5.14",
         "doctrine/annotations": "1.12.1",
         "jms/serializer": "0.16.0",
