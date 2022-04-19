@@ -277,7 +277,7 @@ services:
         class: Symfony\Component\Validator\ConstraintValidatorFactory
 
     nestednode.page_listener:
-        arguments: [ @bbapp ]
+        arguments: [ '@bbapp' ]
         class: BackBee\Event\Listener\PageListener
 
     nestednode.metadata.resolver:
@@ -291,3 +291,15 @@ services:
         class: BackBee\Bundle\BundleManager
         arguments:
             [ '@bbapp', '@routing' ]
+
+    # Resource
+    core.resource.manager:
+        class: BackBee\Resources\ResourceManager
+        arguments:
+            [ '@bbapp' ]
+
+    # Api
+    core.rest.resource.controller:
+        class: BackBee\Rest\Controller\ResourceController
+        arguments:
+            [ '@bbapp', '@core.resource.manager' ]

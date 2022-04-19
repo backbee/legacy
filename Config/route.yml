@@ -32,7 +32,7 @@ bb.rest.resource.upload:
     pattern: /rest/{version}/resource/upload
     defaults:
         _action: uploadAction
-        _controller: BackBee\Rest\Controller\ResourceController
+        _controller: core.rest.resource.controller
     requirements:
         version: \d+
         _method: POST

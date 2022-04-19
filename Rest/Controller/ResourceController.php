@@ -21,137 +21,74 @@
 
 namespace BackBee\Rest\Controller;
 
-use Symfony\Component\HttpFoundation\File\UploadedFile;
+use BackBee\ApplicationInterface;
+use BackBee\Resources\ResourceManager;
+use BackBee\Rest\Controller\Annotations as Rest;
+use Swagger\Annotations as SWG;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-
-use BackBee\Rest\Controller\Annotations as Rest;
-use BackBee\Rest\Controller\Event\ValidateFileUploadEvent;
-use BackBee\Util\File\File;
 
 /**
  * REST API for Resources
  *
- * @category    BackBee
- * @package     BackBee\Rest
- * 
- * @author      f.kroockmann <florian.kroockmann@lp-digital.fr>
- * @author      Mickaël Andrieu <mickael.andrieu@lp-digital.fr>
+ * @author f.kroockmann <florian.kroockmann@lp-digital.fr>
+ * @author Mickaël Andrieu <mickael.andrieu@lp-digital.fr>
+ * @author Djoudi Bensid <d.bensid@obione.eu>
+ *
+ * @SWG\Tag(name="Resource")
  */
 class ResourceController extends AbstractRestController
 {
     /**
+     * @var ResourceManager
+     */
+    public $resourcesManager;
+
+    /**
+     * Constructor.
+     *
+     * @param \BackBee\ApplicationInterface      $application
+     * @param \BackBee\Resources\ResourceManager $resourcesManager
+     */
+    public function __construct(ApplicationInterface $application, ResourceManager $resourcesManager)
+    {
+        $this->resourcesManager = $resourcesManager;
+        parent::__construct($application);
+    }
+
+    /**
      * Upload file action
      *
-     * @return \Symfony\Component\HttpFoundation\JsonResponse
-     * @throws NotFoundHttpException No file in the request
-     * @throws BadRequestHttpException Only on file can be upload
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     *
      * @Rest\Security("is_fully_authenticated() & has_role('ROLE_API_USER')")
+     *
+     * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
-    public function uploadAction(Request $request)
+    public function uploadAction(Request $request): JsonResponse
     {
         $files = $request->files;
         $data = [];
 
         if ($files->count() === 1) {
             foreach ($files as $file) {
-                $data = $this->doRequestUpload($file);
-                break;
+                $data = $this->resourcesManager->doRequestUpload($file);
+            }
+        } elseif ($files->count() === 0) {
+            $src = $request->request->get('src');
+            $originalName = $request->request->get('originalname');
+            if (null !== $src && null !== $originalName) {
+                $data = $this->resourcesManager->doUpload($src, $originalName);
+            } else {
+                throw new NotFoundHttpException('No file to upload');
             }
         } else {
-            if ($files->count() === 0) {
-                $src = $request->request->get('src');
-                $originalName = $request->request->get('originalname');
-                if (null !== $src && null !== $originalName) {
-                    $data = $this->doUpload($src, $originalName);
-                } else {
-                    throw new NotFoundHttpException('No file to upload');
-                }
-            } else {
-                throw new BadRequestHttpException('You can upload only one file by request');
-            }
+            throw new BadRequestHttpException('You can upload only one file by request');
         }
 
-        return $this->createJsonResponse($data, 201);
-    }
-
-    /**
-     * Upload file from the request
-     *
-     * @param  UploadedFile $file
-     * @return Array $data Retrieve into the content of response
-     * @throws BadRequestHttpException The file is too big
-     */
-    private function doRequestUpload(UploadedFile $file)
-    {
-        $tmpDirectory = $this->getApplication()->getTemporaryDir();
-        $data = [];
-
-        if (null !== $file) {
-            if ($file->isValid()) {
-                if ($file->getClientSize() <= $file->getMaxFilesize()) {
-                    $data = $this->buildData($file->getClientOriginalName(), $file->guessExtension());
-                    $file->move($tmpDirectory, $data['filename']);
-                    $data['size'] = round($file->getClientSize() / 1024, 2);
-                    if ($imageInfo = @getimagesize( $data['path'])) {
-                        if (isset($imageInfo[0]) && isset($imageInfo[1])) {
-                            $data['width'] = $imageInfo[0];
-                            $data['height'] = $imageInfo[1];
-                        }
-                    } else {
-                        $data['width'] = 0;
-                        $data['height'] = 0;
-                    }
-                } else {
-                    throw new BadRequestHttpException('Too big file, the max file size is ' . $file->getMaxFilesize());
-                }
-            } else {
-                throw new BadRequestHttpException($file->getErrorMessage());
-            }
-        }
-
-        return $data;
-    }
-
-    /**
-     * Upload file from a base64
-     *
-     * @param String $src base64
-     * @param String $originalName
-     * @return Array $data
-     */
-    private function doUpload($src, $originalName)
-    {
-        $data = $this->buildData($originalName, File::getExtension($originalName, false));
-        file_put_contents($data['path'], base64_decode($src));
-
-        $this->application->getEventDispatcher()->dispatch(
-            ValidateFileUploadEvent::EVENT_NAME,
-            new ValidateFileUploadEvent($data['path'])
-        );
-
-        return $data;
-    }
-
-    /**
-     * Build data for retrieve into the content of response
-     *
-     * @param String $originalName
-     * @param String $extension
-     * @return Array $data
-     */
-    private function buildData($originalName, $extension)
-    {
-        $tmpDirectory = $this->getApplication()->getTemporaryDir();
-        $fileName = md5($originalName . uniqid('', true)) . '.' . $extension;
-
-        $data = [
-            'originalname' => $originalName,
-            'path'         => $tmpDirectory . DIRECTORY_SEPARATOR . $fileName,
-            'filename'     => $fileName
-        ];
-
-        return $data;
+        return new JsonResponse($data, Response::HTTP_CREATED);
     }
 }
