@@ -47,7 +47,7 @@ class FileSystem extends AbstractTransport
 
         if (null !== $this->_remotepath &&
                 false === file_exists($this->_remotepath)) {
-            if (false === @mkdir($this->_remotepath, 0755, true)) {
+            if (false === @mkdir($this->_remotepath, 0775, true)) {
                 throw new Exception\MisconfigurationException(sprintf('Can not create remote path %s', $this->_remotepath));
             }
         }
@@ -252,7 +252,7 @@ class FileSystem extends AbstractTransport
         }
 
         if (false === file_exists($local_path)) {
-            if (false === @mkdir($local_path, 0755, true)) {
+            if (false === @mkdir($local_path, 0775, true)) {
                 throw new TransportException(sprintf('Unable to create local folder %s.', $local_path));
             }
         } elseif (false === is_dir($local_path)) {

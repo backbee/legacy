@@ -103,7 +103,7 @@ class File implements PersistorInterface
             $configDumpDir .= DIRECTORY_SEPARATOR.'bundle'.DIRECTORY_SEPARATOR.$key;
         }
 
-        if (!is_dir($configDumpDir) && false === @mkdir($configDumpDir, 0755, true)) {
+        if (!is_dir($configDumpDir) && false === @mkdir($configDumpDir, 0775, true)) {
             throw new \Exception('Unable to create config dump directory');
         }
 
