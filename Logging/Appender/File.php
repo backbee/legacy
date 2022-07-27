@@ -28,7 +28,7 @@ use BackBee\Logging\Formatter\Simple;
 /**
  * @category    BackBee
  *
- * 
+ *
  * @author      c.rouillon <charles.rouillon@lp-digital.fr>
  */
 class File implements AppenderInterface
@@ -46,7 +46,7 @@ class File implements AppenderInterface
         $dirname = dirname($logfile);
         $mode = array_key_exists('mode', $options) ? $options['mode'] : 'a';
 
-        if (!is_dir($dirname) && !@mkdir($dirname, 0711, true)) {
+        if (!is_dir($dirname) && !@mkdir($dirname, 0775, true)) {
             throw new LoggingException(sprintf('Unable to create log directory `%s`.', $dirname));
         }
 

@@ -31,7 +31,7 @@ use BackBee\Renderer\Exception\RendererException;
  *
  * @category    BackBee
  *
- * 
+ *
  * @author      e.chau <eric.chau@lp-digital.fr>
  */
 class Twig extends AbstractRendererAdapter
@@ -105,7 +105,7 @@ class Twig extends AbstractRendererAdapter
      */
     public function setTwigCache($cacheDir)
     {
-        if (!is_dir($cacheDir) && (!is_writable(dirname($cacheDir)) || false === @mkdir($cacheDir, 0755))) {
+        if (!is_dir($cacheDir) && (!is_writable(dirname($cacheDir)) || false === @mkdir($cacheDir, 0775))) {
             throw new RendererException(
                 sprintf('Unable to create twig cache "%s"', $cacheDir),
                 RendererException::RENDERING_ERROR

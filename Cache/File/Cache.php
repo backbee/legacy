@@ -34,7 +34,7 @@ use BackBee\Util\StringUtils;
  *
  * @category    BackBee
  *
- * 
+ *
  * @author      c.rouillon <charles.rouillon@lp-digital.fr>
  */
 class Cache extends AbstractCache
@@ -78,7 +78,7 @@ class Cache extends AbstractCache
         }
 
         if (true === $this->_instance_options['cacheautogenerate'] && false === is_dir($this->cachedir)
-                && false === @mkdir($this->cachedir, 0755, true)) {
+                && false === @mkdir($this->cachedir, 0775, true)) {
             throw new CacheException(sprintf('Unable to create the cache directory `%s`.', $this->cachedir));
         }
 
