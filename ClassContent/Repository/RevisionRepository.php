@@ -39,7 +39,7 @@ use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMException;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\ORM\TransactionRequiredException;
-use Psr\Log\LoggerInterface;
+use Exception;
 use Symfony\Component\Security\Acl\Domain\UserSecurityIdentity;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 
@@ -49,6 +49,7 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
  * @package BackBee\ClassContent\Repository
  *
  * @author  c.rouillon <charles.rouillon@lp-digital.fr>
+ * @author Djoudi Bensid <d.bensid@team-one.fr>
  */
 class RevisionRepository extends EntityRepository
 {
@@ -220,16 +221,13 @@ class RevisionRepository extends EntityRepository
      * @param boolean              $checkoutOnMissing If true, checks out a new revision if none was found
      *
      * @return Revision|void|null
-     * @throws ORMException
-     * @throws OptimisticLockException
-     * @throws TransactionRequiredException
      */
     public function getDraft(
         AbstractClassContent $content,
         BBUserToken $token,
         bool $checkoutOnMissing = false
     ) {
-        if (null === $revision = $content->getDraft()) {
+        if (null === ($revision = $content->getDraft())) {
             try {
                 if (false === $this->_em->contains($content)) {
                     $content = $this->_em->find(get_class($content), $content->getUid());
@@ -268,7 +266,9 @@ class RevisionRepository extends EntityRepository
                     $this->_em->remove($draft);
                     $this->_em->flush($draft);
                 }
-
+            } catch (Exception $e) {
+                $this->removeDraft($content);
+                $revision = null;
             }
         }
 
@@ -410,5 +410,33 @@ class RevisionRepository extends EntityRepository
             throw new ClassContentException('Content is out of date', ClassContentException::REVISION_OUTOFDATE);
         }
 
+    }
+
+    /**
+     * Remove draft in particular if it is incorrect.
+     *
+     * @param \BackBee\ClassContent\AbstractClassContent $content
+     *
+     * @return void
+     */
+    private function removeDraft(AbstractClassContent $content): void
+    {
+        try {
+            $this->createQueryBuilder('r')->delete()
+                ->andWhere('r._content = :content')
+                ->andWhere('r._owner = :owner')
+                ->andWhere('r._state IN (:states)')
+                ->setParameters(
+                    [
+                        'content' => $content,
+                        'owner' => '' . UserSecurityIdentity::fromToken($this->uniqToken),
+                        'states' => [Revision::STATE_ADDED, Revision::STATE_MODIFIED, Revision::STATE_CONFLICTED],
+                    ]
+                )
+                ->getQuery()
+                ->execute();
+        } catch (Exception $exception) {
+
+        }
     }
 }
