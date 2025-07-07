@@ -216,22 +216,25 @@ class RevisionRepository extends EntityRepository
     /**
      * Return the user's draft of a content, optionally checks out a new one if not exists.
      *
-     * @param AbstractClassContent $content
-     * @param BBUserToken          $token
-     * @param boolean              $checkoutOnMissing If true, checks out a new revision if none was found
+     * @param AbstractClassContent                     $content
+     * @param null|\BackBee\Security\Token\BBUserToken $token
+     * @param boolean                                  $checkoutOnMissing If true, checks out a new revision if none was found
      *
      * @return Revision|void|null
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
     public function getDraft(
         AbstractClassContent $content,
-        BBUserToken $token,
+        ?BBUserToken $token = null,
         bool $checkoutOnMissing = false
     ) {
-        if (null === ($revision = $content->getDraft())) {
+        $revision = $content->getDraft();
+
+        if ($revision === null) {
             try {
-                if (false === $this->_em->contains($content)) {
+                if ($this->_em->contains($content) === false) {
                     $content = $this->_em->find(get_class($content), $content->getUid());
-                    if (null === $content) {
+                    if ($content === null) {
                         return;
                     }
                 }
