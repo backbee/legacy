@@ -16,7 +16,7 @@
         },
         {
             "name": "Djoudi Bensid",
-            "email": "d.bensid@obione.eu"
+            "email": "d.bensid@team-one.fr"
         },
         {
             "name": "Chau Eric",
@@ -41,7 +41,7 @@
     ],
     "require": {
         "php": ">=7.2",
-        "doctrine/orm": "v2.5.14",
+        "backbee/doctrine-orm": "v2.5.15",
         "doctrine/annotations": "1.12.1",
         "jms/serializer": "0.16.0",
         "jms/metadata": "1.5.1",
