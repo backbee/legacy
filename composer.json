@@ -41,7 +41,7 @@
     ],
     "require": {
         "php": ">=7.2",
-        "backbee/doctrine-orm": "v2.5.15",
+        "doctrine/orm": "v2.5.14",
         "doctrine/annotations": "1.12.1",
         "jms/serializer": "0.16.0",
         "jms/metadata": "1.5.1",
