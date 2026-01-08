@@ -1,5 +1,4 @@
 <?php
-
 /*
  * Copyright (c) 2022 Obione
  *
@@ -51,20 +50,20 @@ class ServiceLoader
      *
      * @param Container    $container        the container we want to load services into
      * @param string|array $dir              directory (or directories) in where we can find services files
-     * @param string|null  $service_filename define the service's filename we want to load,
+     * @param string|null  $serviceFilename  define the service's filename we want to load,
      *                                       default: ContainerBuilder::SERVICE_FILENAME
      */
-    public static function loadServicesFromYamlFile(Container $container, $dir, $service_filename = null): void
+    public static function loadServicesFromYamlFile(Container $container, $dir, ?string $serviceFilename = null): void
     {
         try {
-            if (null === $service_filename) {
-                $service_filename = ContainerBuilder::SERVICE_FILENAME;
+            if ($serviceFilename === null) {
+                $serviceFilename = ContainerBuilder::SERVICE_FILENAME;
             }
 
-            (new YamlFileLoader($container, new FileLocator((array)$dir)))->load($service_filename . '.yml');
+            (new YamlFileLoader($container, new FileLocator((array)$dir)))->load($serviceFilename . '.yml');
         } catch (Exception $exception) {
             $container->get('backbee.logger')->error(
-                sprintf(
+                \sprintf(
                     '%s : %s : %s',
                     __CLASS__,
                     __FUNCTION__,
@@ -75,24 +74,24 @@ class ServiceLoader
     }
 
     /**
-     * Load services from xml file into your container.
+     * Load services from XML file into your container.
      *
      * @param Container    $container        the container we want to load services into
      * @param string|array $dir              directory (or directories) in where we can find services files
-     * @param string|null  $service_filename define the service's filename we want to load,
+     * @param string|null  $serviceFilename  define the service's filename we want to load,
      *                                       default: ContainerBuilder::SERVICE_FILENAME
      */
-    public static function loadServicesFromXmlFile(Container $container, $dir, $service_filename = null): void
+    public static function loadServicesFromXmlFile(Container $container, $dir, ?string $serviceFilename = null): void
     {
         try {
-            if (null === $service_filename) {
-                $service_filename = ContainerBuilder::SERVICE_FILENAME;
+            if ($serviceFilename === null) {
+                $serviceFilename = ContainerBuilder::SERVICE_FILENAME;
             }
 
-            (new XmlFileLoader($container, new FileLocator((array)$dir)))->load($service_filename . '.xml');
+            (new XmlFileLoader($container, new FileLocator((array)$dir)))->load($serviceFilename . '.xml');
         } catch (Exception $exception) {
             $container->get('backbee.logger')->error(
-                sprintf(
+                \sprintf(
                     '%s : %s : %s',
                     __CLASS__,
                     __FUNCTION__,

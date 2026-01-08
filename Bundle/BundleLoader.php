@@ -540,44 +540,58 @@ class BundleLoader implements DumpableServiceInterface, DumpableServiceProxyInte
      * @param string        $serviceId
      * @param callable|null $recipe
      */
-    private function loadServices(Config $config, $serviceId, callable $recipe = null)
+    private function loadServices(Config $config, string $serviceId, callable $recipe = null): void
     {
-        if (false === $this->runRecipe($config, $recipe)) {
-            $directories = array_unique(
-                array_merge(
-                    BundleConfigDirectory::getDirectories(
-                        $this->application->getBaseRepository(),
-                        $this->application->getContext(),
-                        $this->application->getEnvironment(),
-                        str_replace('bundle.', '', $serviceId)
-                    ),
-                    BundleConfigDirectory::getDirectories(
-                        $this->application->getBaseRepository(),
-                        $this->application->getContext(),
-                        $this->application->getEnvironment(),
-                        basename(dirname($config->getBaseDir()))
-                    )
-                )
-            );
-            array_unshift($directories, $this->getConfigDirByBundleBaseDir(dirname($config->getBaseDir())));
+        if ($this->runRecipe($config, $recipe) === true) {
+            return;
+        }
 
-            foreach ($directories as $directory) {
-                $filepath = $directory . DIRECTORY_SEPARATOR . 'services.xml';
-                if (is_file($filepath) && is_readable($filepath)) {
-                    try {
-                        ServiceLoader::loadServicesFromXmlFile($this->container, $directory);
-                    } catch (Exception $e) {
-                        // nothing to do
-                    }
+        $baseRepository = $this->application->getBaseRepository();
+        $context        = $this->application->getContext();
+        $environment    = $this->application->getEnvironment();
+        $bundleBaseDir  = dirname($config->getBaseDir());
+        $bundleName     = str_replace('bundle.', '', $serviceId);
+        $bundleShort    = basename($bundleBaseDir);
+
+        $directories = array_unique(array_merge(
+            BundleConfigDirectory::getDirectories($baseRepository, $context, $environment, $bundleName),
+            BundleConfigDirectory::getDirectories($baseRepository, $context, $environment, $bundleShort)
+        ));
+
+        array_unshift($directories, $this->getConfigDirByBundleBaseDir($bundleBaseDir));
+
+        foreach ($directories as $directory) {
+            if (!is_dir($directory)) {
+                continue;
+            }
+
+            $xmlFile = $directory . DIRECTORY_SEPARATOR . 'services.xml';
+            if (is_readable($xmlFile)) {
+                try {
+                    ServiceLoader::loadServicesFromXmlFile($this->container, $directory);
+                } catch (Exception $e) {
+                    $this->application->getLogging()->error($e->getMessage());
+                }
+            }
+
+            $yamlFiles = [
+                ['filename' => 'services',   'fullpath' => $directory . DIRECTORY_SEPARATOR . 'services.yml'],
+                ['filename' => 'parameters', 'fullpath' => $directory . DIRECTORY_SEPARATOR . 'parameters.yml'],
+            ];
+
+            foreach ($yamlFiles as $file) {
+                if (!is_readable($file['fullpath'])) {
+                    continue;
                 }
 
-                $filepath = $directory . DIRECTORY_SEPARATOR . 'services.yml';
-                if (is_file($filepath) && is_readable($filepath)) {
-                    try {
-                        ServiceLoader::loadServicesFromYamlFile($this->container, $directory);
-                    } catch (Exception $e) {
-                        // nothing to do
-                    }
+                try {
+                    ServiceLoader::loadServicesFromYamlFile(
+                        $this->container,
+                        $directory,
+                        $file['filename']
+                    );
+                } catch (Exception $e) {
+                    $this->application->getLogging()->error($e->getMessage());
                 }
             }
         }
