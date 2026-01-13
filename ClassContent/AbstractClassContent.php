@@ -955,18 +955,22 @@ abstract class AbstractClassContent extends AbstractContent
      */
     protected function getContentByDataValue($type, $value)
     {
-        if (class_exists($type) && null !== $value) {
-            $index = 0;
-            foreach ($this->_subcontent as $subcontent) {
-                $this->subcontentmap[$subcontent->getUid()] = $index++;
-                if ($subcontent->getUid() === $value) {
-                    return $subcontent;
-                    break;
+        try {
+            if (class_exists($type) && null !== $value) {
+                $index = 0;
+                foreach ($this->_subcontent as $subcontent) {
+                    $this->subcontentmap[$subcontent->getUid()] = $index++;
+                    if ($subcontent->getUid() === $value) {
+                        return $subcontent;
+                        break;
+                    }
                 }
             }
-        }
 
-        return parent::getContentByDataValue($type, $value);
+            return parent::getContentByDataValue($type, $value);
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     /**

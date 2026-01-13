@@ -745,7 +745,11 @@ abstract class AbstractContent implements ObjectIdentifiableInterface, Renderabl
      */
     protected function getContentByDataValue($type, $value)
     {
-        return new $type($value);
+        try {
+            return new $type($value);
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     /**
