@@ -1,5 +1,4 @@
 <?php
-
 /*
  * Copyright (c) 2022 Obione
  *
@@ -21,9 +20,6 @@
 
 namespace BackBee\NestedNode\Repository;
 
-use Doctrine\ORM\EntityRepository;
-use Doctrine\ORM\Tools\Pagination\Paginator;
-
 use BackBee\ClassContent\AbstractClassContent;
 use BackBee\ClassContent\ContentSet;
 use BackBee\Exception\InvalidArgumentException;
@@ -32,22 +28,22 @@ use BackBee\NestedNode\Section;
 use BackBee\Security\Token\BBUserToken;
 use BackBee\Site\Layout;
 use BackBee\Site\Site;
+use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 
 /**
- * Page repository.
+ * Class PageRepository
  *
- * @category    BackBee
- *
- *
- * @author      c.rouillon <charles.rouillon@lp-digital.fr>
+ * @author c.rouillon <charles.rouillon@lp-digital.fr>
+ * @author Djoudi Bensid <d.bensid@team-one.fr>
  */
 class PageRepository extends EntityRepository
 {
     /**
      * Creates a new Page QueryBuilder instance that is prepopulated for this entity name.
      *
-     * @param string                $alias              The alias to use.
-     * @param string                $indexBy            Optional, the index to use for the query.
+     * @param string $alias   The alias to use.
+     * @param string $indexBy Optional, the index to use for the query.
      *
      * @return PageQueryBuilder                         The page query builder for this repository.
      */
@@ -61,68 +57,68 @@ class PageRepository extends EntityRepository
     /**
      * Finds entities by a set of criteria with automatic join on section if need due to retro-compatibility.
      *
-     * @param  array                $criteria           An array of criteria ( field => value ).
-     * @param  array|null           $orderBy            Optional, an array of ordering criteria ( [field => direction] ).
-     * @param  integer|null         $limit              Optional, the max number of results.
-     * @param  integer|null         $offset             Optional, The starting index of results.
+     * @param array        $criteria An array of criteria ( field => value ).
+     * @param array|null   $orderBy  Optional, an array of ordering criteria ( [field => direction] ).
+     * @param integer|null $limit    Optional, the max number of results.
+     * @param integer|null $offset   Optional, The starting index of results.
      *
      * @return Page[]                                   An array of matching pages.
      */
     public function findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
     {
         if (
-                false === PageQueryBuilder::hasJoinCriteria($criteria) &&
-                false === PageQueryBuilder::hasJoinCriteria($orderBy)
+            false === PageQueryBuilder::hasJoinCriteria($criteria) &&
+            false === PageQueryBuilder::hasJoinCriteria($orderBy)
         ) {
             return parent::findBy($criteria, $orderBy, $limit, $offset);
         }
 
         $query = $this->createQueryBuilder('p')
-                        ->addSearchCriteria($criteria);
+            ->addSearchCriteria($criteria);
 
         if (false === empty($orderBy)) {
             $query->addMultipleOrderBy($orderBy);
         }
 
         return $query->setMaxResults($limit)
-                        ->setFirstResult($offset)
-                        ->getQuery()
-                        ->getResult();
+            ->setFirstResult($offset)
+            ->getQuery()
+            ->getResult();
     }
 
     /**
      * Finds a single entity by a set of criteria with automatic join on section if need due to retro-compatibility.
      *
-     * @param  array                $criteria           An array of criteria.
-     * @param  array|null           $orderBy            Optional, an array of ordering criteria.
+     * @param array      $criteria An array of criteria.
+     * @param array|null $orderBy  Optional, an array of ordering criteria.
      *
      * @return object|null                              The page instance or null if the entity can not be found.
      */
     public function findOneBy(array $criteria, array $orderBy = null)
     {
         if (
-                false === PageQueryBuilder::hasJoinCriteria($criteria) &&
-                false === PageQueryBuilder::hasJoinCriteria($orderBy)
+            false === PageQueryBuilder::hasJoinCriteria($criteria) &&
+            false === PageQueryBuilder::hasJoinCriteria($orderBy)
         ) {
             return parent::findOneBy($criteria, $orderBy);
         }
 
         $query = $this->createQueryBuilder('p')
-                ->addSearchCriteria($criteria);
+            ->addSearchCriteria($criteria);
 
         if (false === empty($orderBy)) {
             $query->addMultipleOrderBy($orderBy);
         }
 
         return $query->getQuery()
-                        ->getOneOrNullResult();
+            ->getOneOrNullResult();
     }
 
     /**
      * Returns the ancestor at level $level of the provided page.
      *
-     * @param  Page                 $page               The page to look for ancestor.
-     * @param  integer              $level              Optional, the level of the ancestor (0 by default, ie root).
+     * @param Page    $page  The page to look for ancestor.
+     * @param integer $level Optional, the level of the ancestor (0 by default, ie root).
      *
      * @return Page|null                                The page instance or null if the entity can not be found.
      */
@@ -137,28 +133,28 @@ class PageRepository extends EntityRepository
         }
 
         return $this->createQueryBuilder('p')
-                        ->andIsAncestorOf($page, false, $level)
-                        ->getQuery()
-                        ->getOneOrNullResult();
+            ->andIsAncestorOf($page, false, $level)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     /**
      * Returns the ancestors of the provided page.
      *
-     * @param  Page                 $page               The page to look for ancestors.
-     * @param  integer|null         $depth              Optional, limits results to ancestors from $depth number of generation.
-     * @param  boolean              $includeNode        Optional, include the node itsef to results if true (false by default).
+     * @param Page         $page        The page to look for ancestors.
+     * @param integer|null $depth       Optional, limits results to ancestors from $depth number of generation.
+     * @param boolean      $includeNode Optional, include the node itsef to results if true (false by default).
      *
      * @return Page[]                                   An array of matching ancestors.
      */
     public function getAncestors(Page $page, $depth = null, $includeNode = false)
     {
         $q = $this->createQueryBuilder('p')
-                ->andIsAncestorOf($page, !$includeNode, null === $depth ? null : $page->getLevel() - $depth);
+            ->andIsAncestorOf($page, !$includeNode, null === $depth ? null : $page->getLevel() - $depth);
 
-        $results = $q->orderBy($q->getSectionAlias().'._leftnode', 'asc')
-                ->getQuery()
-                ->getResult();
+        $results = $q->orderBy($q->getSectionAlias() . '._leftnode', 'asc')
+            ->getQuery()
+            ->getResult();
 
         if (true === $includeNode && false === $page->hasMainSection()) {
             $results[] = $page;
@@ -170,64 +166,70 @@ class PageRepository extends EntityRepository
     /**
      * Returns the previous online sibling of $page.
      *
-     * @param  Page                 $page               The page to look for previous sibling
+     * @param Page $page The page to look for previous sibling
      *
      * @return Page|null                                The previous page or null if the entity can not be found.
      */
     public function getOnlinePrevSibling(Page $page)
     {
         $query = $this->createQueryBuilder('p')
-                ->andIsSiblingsOf($page, true, ['_leftnode' => 'DESC', '_position' => 'DESC'], 1, 0)
-                ->andIsOnline();
+            ->andIsSiblingsOf($page, true, ['_leftnode' => 'DESC', '_position' => 'DESC'], 1, 0)
+            ->andIsOnline();
 
         if (true === $page->hasMainSection()) {
             $query->andIsSection()
-                    ->andWhere($query->getSectionAlias().'._leftnode < :leftnode')
-                    ->setParameter('leftnode', $page->getLeftnode());
+                ->andWhere($query->getSectionAlias() . '._leftnode < :leftnode')
+                ->setParameter('leftnode', $page->getLeftnode());
         } else {
             $qOR = $query->expr()->orX();
             $qOR->add('p._section != p')
-                    ->add($query->getSectionAlias().'._parent = :parent');
+                ->add($query->getSectionAlias() . '._parent = :parent');
 
             $query->andWhere('p._position < :position')
-                    ->andWhere($qOR)
-                    ->setParameter('position', $page->getPosition())
-                    ->setParameter('parent', $page->getParent()->getSection());
+                ->andWhere($qOR)
+                ->setParameter('position', $page->getPosition())
+                ->setParameter('parent', $page->getParent()->getSection());
         }
 
         return $query->getQuery()
-                        ->getOneOrNullResult();
+            ->getOneOrNullResult();
     }
 
     /**
      * Returns the online siblings having layout $layout of the provided page.
      *
-     * @param  Page                 $page               The page to look for siblings having $layout.
-     * @param  Layout               $layout             The layout to look for.
-     * @param  boolean              $includeNode        Optional, include $page in results if true (false by default).
-     * @param  array|null           $order              Optional, the ordering criteria ( [field => $sort] ).
-     * @param  integer|null         $limit              Optional, the maximum number of results.
-     * @param  integer              $start              Optional, the first result index (0 by default).
+     * @param Page         $page        The page to look for siblings having $layout.
+     * @param Layout       $layout      The layout to look for.
+     * @param boolean      $includeNode Optional, include $page in results if true (false by default).
+     * @param array|null   $order       Optional, the ordering criteria ( [field => $sort] ).
+     * @param integer|null $limit       Optional, the maximum number of results.
+     * @param integer      $start       Optional, the first result index (0 by default).
      *
      * @return Page[]                                   An array of matching siblings.
      */
-    public function getOnlineSiblingsByLayout(Page $page, Layout $layout, $includeNode = false, $order = null, $limit = null, $start = 0)
-    {
+    public function getOnlineSiblingsByLayout(
+        Page $page,
+        Layout $layout,
+        $includeNode = false,
+        $order = null,
+        $limit = null,
+        $start = 0
+    ) {
         return $this->createQueryBuilder('p')
-                        ->andIsSiblingsOf($page, !$includeNode, $order, $limit, $start)
-                        ->andIsOnline()
-                        ->andWhere('p._layout = :layout')
-                        ->setParameter('layout', $layout)
-                        ->andWhere('p._level = :level')
-                        ->setParameter('level', $page->getLevel())
-                        ->getQuery()
-                        ->getResult();
+            ->andIsSiblingsOf($page, !$includeNode, $order, $limit, $start)
+            ->andIsOnline()
+            ->andWhere('p._layout = :layout')
+            ->setParameter('layout', $layout)
+            ->andWhere('p._level = :level')
+            ->setParameter('level', $page->getLevel())
+            ->getQuery()
+            ->getResult();
     }
 
     /**
      * Returns the next online sibling of $page.
      *
-     * @param  Page                 $page               The page to look for next sibling.
+     * @param Page $page The page to look for next sibling.
      *
      * @return Page|null                                The next page or null if the entity can not be found.
      */
@@ -236,27 +238,27 @@ class PageRepository extends EntityRepository
         $query = $this->createQueryBuilder('p');
 
         if (true === $page->hasMainSection()) {
-            $query->andWhere($query->getSectionAlias().'._leftnode >= :leftnode')
-                    ->orWhere('p._section IN (:sections)')
-                    ->setParameter('leftnode', $page->getLeftnode())
-                    ->setParameter('sections', [$page->getSection(), $page->getSection()->getParent()]);
+            $query->andWhere($query->getSectionAlias() . '._leftnode >= :leftnode')
+                ->orWhere('p._section IN (:sections)')
+                ->setParameter('leftnode', $page->getLeftnode())
+                ->setParameter('sections', [$page->getSection(), $page->getSection()->getParent()]);
         } else {
             $query->andWhere('p._position > :position')
-                    ->setParameter('position', $page->getPosition());
+                ->setParameter('position', $page->getPosition());
         }
 
         return $query->andIsSiblingsOf($page, true, ['_position' => 'ASC', '_leftnode' => 'ASC'], 1, 0)
-                        ->andIsOnline()
-                        ->getQuery()
-                        ->getOneOrNullResult();
+            ->andIsOnline()
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     /**
      * Inserts a page in a tree at first position.
      *
-     * @param  Page                 $page               The page to be inserted.
-     * @param  Page                 $parent             The parent node.
-     * @param  boolean              $section            If true, the page is inserted with a section (false by default).
+     * @param Page    $page    The page to be inserted.
+     * @param Page    $parent  The parent node.
+     * @param boolean $section If true, the page is inserted with a section (false by default).
      *
      * @return Page                                     The inserted page.
      */
@@ -268,9 +270,9 @@ class PageRepository extends EntityRepository
     /**
      * Inserts a page in a tree at last position.
      *
-     * @param  Page                 $page               The page to be inserted.
-     * @param  Page                 $parent             The parent node.
-     * @param  boolean              $section            If true, the page is inserted with a section (false by default).
+     * @param Page    $page    The page to be inserted.
+     * @param Page    $parent  The parent node.
+     * @param boolean $section If true, the page is inserted with a section (false by default).
      *
      * @return Page                                     The inserted page.
      */
@@ -282,10 +284,10 @@ class PageRepository extends EntityRepository
     /**
      * Inserts a page in a tree.
      *
-     * @param  Page                 $page               The page to be inserted.
-     * @param  Page                 $parent             The parent node.
-     * @param  integer              $position           The position of the inserted page
-     * @param  boolean              $section            If true, the page is inserted with a section (false by default).
+     * @param Page    $page     The page to be inserted.
+     * @param Page    $parent   The parent node.
+     * @param integer $position The position of the inserted page
+     * @param boolean $section  If true, the page is inserted with a section (false by default).
      *
      * @return Page                                     The inserted page.
      *
@@ -299,8 +301,8 @@ class PageRepository extends EntityRepository
 
         $current_parent = $page->getSection();
         $page->setParent($parent)
-                ->setPosition($position)
-                ->setLevel($parent->getSection()->getLevel() + 1);
+            ->setPosition($position)
+            ->setLevel($parent->getSection()->getLevel() + 1);
 
         if (true === $section) {
             $page = $this->saveWithSection($page, $current_parent);
@@ -316,14 +318,15 @@ class PageRepository extends EntityRepository
     /**
      * Returns default ordering criteria for descendants if none provided.
      *
-     * @param  integer|null         $depth              Optional, limit to $depth number of generation.
-     * @param  array                $order              Optional, the ordering criteria ( [] by default ).
+     * @param integer|null $depth Optional, limit to $depth number of generation.
+     * @param array        $order Optional, the ordering criteria ( [] by default ).
      *
-     * @return array                                    If none ordering criteria provided and only one descendant generation is requested
-     *                                                  the result will be array['_position' => 'ASC', '_leftnode' => 'ASC']
-     *                                                  If none ordering criteria provided and several generations requested the result
-     *                                                  will be array['_leftnode' => 'ASC', '_level' => 'ASC', '_position' => 'ASC']
-     *                                                  elsewhere $order.
+     * @return array                                    If none ordering criteria provided and only one descendant
+     *                                                  generation is requested the result will be array['_position' =>
+     *                                                  'ASC', '_leftnode' => 'ASC'] If none ordering criteria provided
+     *                                                  and several generations requested the result will be
+     *                                                  array['_leftnode' => 'ASC', '_level' => 'ASC', '_position' =>
+     *                                                  'ASC'] elsewhere $order.
      */
     private function getOrderingDescendants($depth = null, $order = [])
     {
@@ -346,26 +349,43 @@ class PageRepository extends EntityRepository
     /**
      * Returns the descendants of $page.
      *
-     * @param  Page                 $page               The page to look for descendants.
-     * @param  integer|null         $depth              Optional, limit to $depth number of generation.
-     * @param  boolean              $includeNode        Optional, include $page in results if true (false by default).
-     * @param  array                $order              Optional, the ordering criteria ( [] by default ).
-     * @param  boolean              $paginate           Optional, if true return a paginator rather than an array (false by default).
-     * @param  integer              $start              Optional, if paginated set the first result index (0 by default).
-     * @param  integer              $limit              Optional, if paginated set the maxmum number of results (25 by default).
-     * @param  boolean              $limitToSection     Optional, limit to descendants having child (false by default).
-     * @param  string|null          $state              Optional, either 'visible', 'online', 'not-deleted' or empty.
+     * @param Page         $page           The page to look for descendants.
+     * @param integer|null $depth          Optional, limit to $depth number of generation.
+     * @param boolean      $includeNode    Optional, include $page in results if true (false by default).
+     * @param array        $order          Optional, the ordering criteria ( [] by default ).
+     * @param boolean      $paginate       Optional, if true return a paginator rather than an array (false by default).
+     * @param integer      $start          Optional, if paginated set the first result index (0 by default).
+     * @param integer      $limit          Optional, if paginated set the maxmum number of results (25 by default).
+     * @param boolean      $limitToSection Optional, limit to descendants having child (false by default).
+     * @param string|null  $state          Optional, either 'visible', 'online', 'not-deleted' or empty.
      *
      * @return Page[]|Paginator                         The matching pages if $paginate is false, a Paginator elsewhere.
      */
-    private function getDescendantsWithState(Page $page, $depth = null, $includeNode = false, $order = [], $paginate = false, $start = 0, $limit = 25, $limitToSection = false, $state = null)
-    {
+    private function getDescendantsWithState(
+        Page $page,
+        $depth = null,
+        $includeNode = false,
+        $order = [],
+        $paginate = false,
+        $start = 0,
+        $limit = 25,
+        $limitToSection = false,
+        $state = null
+    ) {
         if (true === $page->isLeaf()) {
             return [];
         }
 
         $query = $this->createQueryBuilder('p')
-                ->andIsDescendantOf($page, !$includeNode, $depth, $this->getOrderingDescendants($depth, $order), (true === $paginate) ? $limit : null, $start, $limitToSection);
+            ->andIsDescendantOf(
+                $page,
+                !$includeNode,
+                $depth,
+                $this->getOrderingDescendants($depth, $order),
+                (true === $paginate) ? $limit : null,
+                $start,
+                $limitToSection
+            );
 
         switch ($state) {
             case 'online':
@@ -389,66 +409,119 @@ class PageRepository extends EntityRepository
     /**
      * Returns the descendants of $page.
      *
-     * @param  Page                 $page               The page to look for descendants.
-     * @param  integer|null         $depth              Optional, limit to $depth number of generation.
-     * @param  boolean              $includeNode        Optional, include $page in results if true (false by default).
-     * @param  array                $order              Optional, the ordering criteria ( [] by default ).
-     * @param  boolean              $paginate           Optional, if true return a paginator rather than an array (false by default).
-     * @param  integer              $start              Optional, if paginated set the first result index (0 by default).
-     * @param  integer              $limit              Optional, if paginated set the maxmum number of results (25 by default).
-     * @param  boolean              $limitToSection     Optional, limit to descendants having child (false by default).
+     * @param Page         $page           The page to look for descendants.
+     * @param integer|null $depth          Optional, limit to $depth number of generation.
+     * @param boolean      $includeNode    Optional, include $page in results if true (false by default).
+     * @param array        $order          Optional, the ordering criteria ( [] by default ).
+     * @param boolean      $paginate       Optional, if true return a paginator rather than an array (false by default).
+     * @param integer      $start          Optional, if paginated set the first result index (0 by default).
+     * @param integer      $limit          Optional, if paginated set the maxmum number of results (25 by default).
+     * @param boolean      $limitToSection Optional, limit to descendants having child (false by default).
      *
      * @return Page[]|Paginator                         The matching pages if $paginate is false, a Paginator elsewhere.
      */
-    public function getDescendants(Page $page, $depth = null, $includeNode = false, $order = [], $paginate = false, $start = 0, $limit = 25, $limitToSection = false)
-    {
-        return $this->getDescendantsWithState($page, $depth, $includeNode, $order, $paginate, $start, $limit, $limitToSection);
+    public function getDescendants(
+        Page $page,
+        $depth = null,
+        $includeNode = false,
+        $order = [],
+        $paginate = false,
+        $start = 0,
+        $limit = 25,
+        $limitToSection = false
+    ) {
+        return $this->getDescendantsWithState(
+            $page,
+            $depth,
+            $includeNode,
+            $order,
+            $paginate,
+            $start,
+            $limit,
+            $limitToSection
+        );
     }
 
     /**
      * Returns the online descendants of $page.
      *
-     * @param  Page                 $page               The page to look for descendants.
-     * @param  integer|null         $depth              Optional, limit to $depth number of generation.
-     * @param  boolean              $includeNode        Optional, include $page in results if true (false by default).
-     * @param  array                $order              Optional, the ordering criteria ( [] by default ).
-     * @param  boolean              $paginate           Optional, if true return a paginator rather than an array (false by default).
-     * @param  integer              $start              Optional, if paginated set the first result index (0 by default).
-     * @param  integer              $limit              Optional, if paginated set the maxmum number of results (25 by default).
-     * @param  boolean              $limitToSection     Optional, limit to descendants having child (false by default).
+     * @param Page         $page           The page to look for descendants.
+     * @param integer|null $depth          Optional, limit to $depth number of generation.
+     * @param boolean      $includeNode    Optional, include $page in results if true (false by default).
+     * @param array        $order          Optional, the ordering criteria ( [] by default ).
+     * @param boolean      $paginate       Optional, if true return a paginator rather than an array (false by default).
+     * @param integer      $start          Optional, if paginated set the first result index (0 by default).
+     * @param integer      $limit          Optional, if paginated set the maxmum number of results (25 by default).
+     * @param boolean      $limitToSection Optional, limit to descendants having child (false by default).
      *
      * @return Page[]|Paginator                         The matching pages if $paginate is false, a Paginator elsewhere.
      */
-    public function getOnlineDescendants(Page $page, $depth = null, $includeNode = false, $order = [], $paginate = false, $start = 0, $limit = 25, $limitToSection = false)
-    {
-        return $this->getDescendantsWithState($page, $depth, $includeNode, $order, $paginate, $start, $limit, $limitToSection, 'online');
+    public function getOnlineDescendants(
+        Page $page,
+        $depth = null,
+        $includeNode = false,
+        $order = [],
+        $paginate = false,
+        $start = 0,
+        $limit = 25,
+        $limitToSection = false
+    ) {
+        return $this->getDescendantsWithState(
+            $page,
+            $depth,
+            $includeNode,
+            $order,
+            $paginate,
+            $start,
+            $limit,
+            $limitToSection,
+            'online'
+        );
     }
 
     /**
      * Returns the visible (ie online and not hidden) descendants of $page.
      *
-     * @param  Page                 $page               The page to look for descendants.
-     * @param  integer|null         $depth              Optional, limit to $depth number of generation.
-     * @param  boolean              $includeNode        Optional, include $page in results if true (false by default).
-     * @param  array                $order              Optional, the ordering criteria ( [] by default ).
-     * @param  boolean              $paginate           Optional, if true return a paginator rather than an array (false by default).
-     * @param  integer              $start              Optional, if paginated set the first result index (0 by default).
-     * @param  integer              $limit              Optional, if paginated set the maxmum number of results (25 by default).
-     * @param  boolean              $limitToSection     Optional, limit to descendants having child (false by default).
+     * @param Page         $page           The page to look for descendants.
+     * @param integer|null $depth          Optional, limit to $depth number of generation.
+     * @param boolean      $includeNode    Optional, include $page in results if true (false by default).
+     * @param array        $order          Optional, the ordering criteria ( [] by default ).
+     * @param boolean      $paginate       Optional, if true return a paginator rather than an array (false by default).
+     * @param integer      $start          Optional, if paginated set the first result index (0 by default).
+     * @param integer      $limit          Optional, if paginated set the maxmum number of results (25 by default).
+     * @param boolean      $limitToSection Optional, limit to descendants having child (false by default).
      *
      * @return Page[]|Paginator                         The matching pages if $paginate is false, a Paginator elsewhere.
      */
-    public function getVisibleDescendants(Page $page, $depth = null, $includeNode = false, $order = [], $paginate = false, $start = 0, $limit = 25, $limitToSection = false)
-    {
-        return $this->getDescendantsWithState($page, $depth, $includeNode, $order, $paginate, $start, $limit, $limitToSection, 'visible');
+    public function getVisibleDescendants(
+        Page $page,
+        $depth = null,
+        $includeNode = false,
+        $order = [],
+        $paginate = false,
+        $start = 0,
+        $limit = 25,
+        $limitToSection = false
+    ) {
+        return $this->getDescendantsWithState(
+            $page,
+            $depth,
+            $includeNode,
+            $order,
+            $paginate,
+            $start,
+            $limit,
+            $limitToSection,
+            'visible'
+        );
     }
 
     /**
      * Returns the visible (ie online and not hidden) children of $page.
      *
-     * @param  Page                 $page               The page to look for descendants.
-     * @param  integer|null         $depth              Optional, limit to $depth number of generation.
-     * @param  boolean              $includeNode        Optional, include $page in results if true (false by default).
+     * @param Page         $page        The page to look for descendants.
+     * @param integer|null $depth       Optional, limit to $depth number of generation.
+     * @param boolean      $includeNode Optional, include $page in results if true (false by default).
      *
      * @return Page[]                                   The matching pages if $paginate is false, a Paginator elsewhere.
      *
@@ -462,27 +535,45 @@ class PageRepository extends EntityRepository
     /**
      * Returns the not deleted descendants of $page.
      *
-     * @param  Page                 $page               The page to look for descendants.
-     * @param  integer|null         $depth              Optional, limit to $depth number of generation.
-     * @param  boolean              $includeNode        Optional, include $page in results if true (false by default).
-     * @param  array                $order              Optional, the ordering criteria ( [] by default ).
-     * @param  boolean              $paginate           Optional, if true return a paginator rather than an array (false by default).
-     * @param  integer              $start              Optional, if paginated set the first result index (0 by default).
-     * @param  integer              $limit              Optional, if paginated set the maxmum number of results (25 by default).
-     * @param  boolean              $limitToSection     Optional, limit to descendants having child (false by default).
+     * @param Page         $page           The page to look for descendants.
+     * @param integer|null $depth          Optional, limit to $depth number of generation.
+     * @param boolean      $includeNode    Optional, include $page in results if true (false by default).
+     * @param array        $order          Optional, the ordering criteria ( [] by default ).
+     * @param boolean      $paginate       Optional, if true return a paginator rather than an array (false by default).
+     * @param integer      $start          Optional, if paginated set the first result index (0 by default).
+     * @param integer      $limit          Optional, if paginated set the maxmum number of results (25 by default).
+     * @param boolean      $limitToSection Optional, limit to descendants having child (false by default).
      *
      * @return Page[]|Paginator                         The matching pages if $paginate is false, a Paginator elsewhere.
      */
-    public function getNotDeletedDescendants(Page $page, $depth = null, $includeNode = false, $order = [], $paginate = false, $start = 0, $limit = 25, $limitToSection = false)
-    {
-        return $this->getDescendantsWithState($page, $depth, $includeNode, $order, $paginate, $start, $limit, $limitToSection, 'not-deleted');
+    public function getNotDeletedDescendants(
+        Page $page,
+        $depth = null,
+        $includeNode = false,
+        $order = [],
+        $paginate = false,
+        $start = 0,
+        $limit = 25,
+        $limitToSection = false
+    ) {
+        return $this->getDescendantsWithState(
+            $page,
+            $depth,
+            $includeNode,
+            $order,
+            $paginate,
+            $start,
+            $limit,
+            $limitToSection,
+            'not-deleted'
+        );
     }
 
     /**
      * Move page as first child of $target.
      *
-     * @param  Page                 $page               The page to be moved.
-     * @param  Page                 $target             The target page.
+     * @param Page $page   The page to be moved.
+     * @param Page $target The target page.
      *
      * @return Page                                     The moved page.
      */
@@ -494,8 +585,8 @@ class PageRepository extends EntityRepository
     /**
      * Move page as last child of $target.
      *
-     * @param  Page                 $page               The page to be moved.
-     * @param  Page                 $target             The target page.
+     * @param Page $page   The page to be moved.
+     * @param Page $target The target page.
      *
      * @return Page                                     The moved page.
      */
@@ -507,9 +598,9 @@ class PageRepository extends EntityRepository
     /**
      * Move page as child of $target.
      *
-     * @param  Page                 $page               The page to be moved.
-     * @param  Page                 $target             The target page.
-     * @param  boolean              $asFirst            Move page as first child of $target if true (default), last child elsewhere.
+     * @param Page    $page    The page to be moved.
+     * @param Page    $target  The target page.
+     * @param boolean $asFirst Move page as first child of $target if true (default), last child elsewhere.
      *
      * @return Page                                     The moved page.
      *
@@ -530,15 +621,15 @@ class PageRepository extends EntityRepository
         $target->getSection()->setHasChildren(true);
 
         return $page->setParent($target)
-                        ->setLevel($target->getLevel() + 1);
+            ->setLevel($target->getLevel() + 1);
     }
 
     /**
      * Move a non-section page as child of $target.
      *
-     * @param  Page                 $page               The page to be moved.
-     * @param  Page                 $target             The target page.
-     * @param  boolean              $asFirst            Move page as first child of $target if true (default), last child elsewhere.
+     * @param Page    $page    The page to be moved.
+     * @param Page    $target  The target page.
+     * @param boolean $asFirst Move page as first child of $target if true (default), last child elsewhere.
      *
      * @return Page                                     The moved page.
      */
@@ -546,19 +637,19 @@ class PageRepository extends EntityRepository
     {
         if (true === $asFirst) {
             return $this->shiftPosition($page, -1, true)
-                            ->insertNodeAsFirstChildOf($page, $target);
+                ->insertNodeAsFirstChildOf($page, $target);
         } else {
             return $this->shiftPosition($page, -1, true)
-                            ->insertNodeAsLastChildOf($page, $target);
+                ->insertNodeAsLastChildOf($page, $target);
         }
     }
 
     /**
      * Move a section page as child of $target.
      *
-     * @param  Page                 $page               The page to be moved.
-     * @param  Page                 $target             The target page.
-     * @param  boolean              $asFirst            Move page as first child of $target if true (default), last child elsewhere.
+     * @param Page    $page    The page to be moved.
+     * @param Page    $target  The target page.
+     * @param boolean $asFirst Move page as first child of $target if true (default), last child elsewhere.
      *
      * @return Page                                     The moved page.
      */
@@ -568,8 +659,8 @@ class PageRepository extends EntityRepository
         $this->shiftLevel($page, $delta);
 
         $this->getEntityManager()
-                ->getRepository('BackBee\NestedNode\Section')
-                ->moveNode($page->getSection(), $target->getSection(), $asFirst ? 'firstin' : 'lastin');
+            ->getRepository('BackBee\NestedNode\Section')
+            ->moveNode($page->getSection(), $target->getSection(), $asFirst ? 'firstin' : 'lastin');
 
         return $page;
     }
@@ -577,8 +668,8 @@ class PageRepository extends EntityRepository
     /**
      * Move a page as previous sibling of $target.
      *
-     * @param  Page                 $page               The page to be moved.
-     * @param  Page                 $target             The target page.
+     * @param Page $page   The page to be moved.
+     * @param Page $target The target page.
      *
      * @return Page                                     The moved page.
      */
@@ -590,8 +681,8 @@ class PageRepository extends EntityRepository
     /**
      * Move a page as next sibling of $target.
      *
-     * @param  Page                 $page               The page to be moved.
-     * @param  Page                 $target             The target page.
+     * @param Page $page   The page to be moved.
+     * @param Page $target The target page.
      *
      * @return Page                                     The moved page.
      */
@@ -603,9 +694,9 @@ class PageRepository extends EntityRepository
     /**
      * Move a page as sibling of $target.
      *
-     * @param  Page                 $page               The page to be moved.
-     * @param  Page                 $target             The target page.
-     * @param  boolean              $asPrevious         Move page as previous sibling of $target if true (default), next sibling elsewhere.
+     * @param Page    $page       The page to be moved.
+     * @param Page    $target     The target page.
+     * @param boolean $asPrevious Move page as previous sibling of $target if true (default), next sibling elsewhere.
      *
      * @return Page                                     The moved page.
      *
@@ -633,9 +724,9 @@ class PageRepository extends EntityRepository
     /**
      * Move a non-section page as sibling of $target.
      *
-     * @param  Page                 $page               The page to be moved.
-     * @param  Page                 $target             The target page.
-     * @param  boolean              $asPrevious         Move page as previous sibling of $target if true (default), next sibling elsewhere.
+     * @param Page    $page       The page to be moved.
+     * @param Page    $target     The target page.
+     * @param boolean $asPrevious Move page as previous sibling of $target if true (default), next sibling elsewhere.
      *
      * @return Page                                     The moved page.
      */
@@ -658,9 +749,9 @@ class PageRepository extends EntityRepository
     /**
      * Move a section page as sibling of $target.
      *
-     * @param  Page                 $page               The page to be moved.
-     * @param  Page                 $target             The target page.
-     * @param  boolean              $asPrevious         Move page as previous sibling of $target if true (default), next sibling elsewhere.
+     * @param Page    $page       The page to be moved.
+     * @param Page    $target     The target page.
+     * @param boolean $asPrevious Move page as previous sibling of $target if true (default), next sibling elsewhere.
      *
      * @return Page                                     The moved page.
      */
@@ -670,8 +761,8 @@ class PageRepository extends EntityRepository
         $this->shiftLevel($page, $delta);
 
         $this->getEntityManager()
-                ->getRepository('BackBee\NestedNode\Section')
-                ->moveNode($page->getSection(), $target->getSection(), $asPrevious ? 'before' : 'after');
+            ->getRepository('BackBee\NestedNode\Section')
+            ->moveNode($page->getSection(), $target->getSection(), $asPrevious ? 'before' : 'after');
 
         return $page;
     }
@@ -679,18 +770,18 @@ class PageRepository extends EntityRepository
     /**
      * Returns the root page for $site.
      *
-     * @param  Site                 $site               The site to test.
-     * @param  integer[]            $restrictedStates   Optional, limit to pages having provided states ( [] by default ).
+     * @param Site      $site             The site to test.
+     * @param integer[] $restrictedStates Optional, limit to pages having provided states ( [] by default ).
      *
      * @return Page|null                                The root instance or null if the entity can not be found.
      */
     public function getRoot(Site $site, array $restrictedStates = [])
     {
         $q = $this->createQueryBuilder('p')
-                ->andSiteIs($site)
-                ->andParentIs(null)
-                ->orderby('p._position', 'asc')
-                ->setMaxResults(1);
+            ->andSiteIs($site)
+            ->andParentIs(null)
+            ->orderby('p._position', 'asc')
+            ->setMaxResults(1);
 
         if (0 < count($restrictedStates)) {
             $q->andStateIsIn($restrictedStates);
@@ -702,9 +793,9 @@ class PageRepository extends EntityRepository
     /**
      * Returns an array of online children of $page.
      *
-     * @param  Page                 $page               The parent page.
-     * @param  integer|null         $maxResults         Optional, the maximum number of results.
-     * @param  array                $order              Optional, the ordering criteria ( ['_leftnode', 'asc'] by default).
+     * @param Page         $page       The parent page.
+     * @param integer|null $maxResults Optional, the maximum number of results.
+     * @param array        $order      Optional, the ordering criteria ( ['_leftnode', 'asc'] by default).
      *
      * @return Page[]                                   An array of matching pages.
      *
@@ -717,8 +808,8 @@ class PageRepository extends EntityRepository
         }
 
         $query = $this->createQueryBuilder('p')
-                ->andIsOnline()
-                ->andIsDescendantOf($page, true, 1, $this->getOrderingDescendants(1, null), $maxResults, 0, false);
+            ->andIsOnline()
+            ->andIsDescendantOf($page, true, 1, $this->getOrderingDescendants(1, null), $maxResults, 0, false);
 
         return $query->getQuery()->getResult();
     }
@@ -726,22 +817,32 @@ class PageRepository extends EntityRepository
     /**
      * Returns an array of children of $page.
      *
-     * @param  Page                 $page               The parent page.
-     * @param  string               $orderSort          Optional, the sort field, title by default.
-     * @param  string               $orderDir           Optional, the sort direction, asc by default.
-     * @param  string               $paging             Optional, the paging criteria: ['start' => xx, 'limit' => xx], empty by default.
-     * @param  integer[]            $restrictedStates   Optional, limit to pages having provided states, empty by default.
-     * @param  string[]             $options            Optional, the search criteria:
-     *                                                      * 'beforePubdateField'  => timestamp against page._modified,
-     *                                                      * 'afterPubdateField'   => timestamp against page._modified,
+     * @param Page      $page                               The parent page.
+     * @param string    $orderSort                          Optional, the sort field, title by default.
+     * @param string    $orderDir                           Optional, the sort direction, asc by default.
+     * @param string    $paging                             Optional, the paging criteria: ['start' => xx, 'limit' =>
+     *                                                      xx], empty by default.
+     * @param integer[] $restrictedStates                   Optional, limit to pages having provided states, empty by
+     *                                                      default.
+     * @param string[]  $options                            Optional, the search criteria:
+     *                                                      * 'beforePubdateField'  => timestamp against
+     *                                                      page._modified,
+     *                                                      * 'afterPubdateField'   => timestamp against
+     *                                                      page._modified,
      *                                                      * 'searchField'         => string to search for title
      *
      * @return Page[]|Paginator                         Returns Paginaor is $paging criteria provided, array otherwise.
      *
      * @deprecated
      */
-    public function getChildren(Page $page, $orderSort = '_title', $orderDir = 'asc', $paging = [], $restrictedStates = [], $options = [])
-    {
+    public function getChildren(
+        Page $page,
+        $orderSort = '_title',
+        $orderDir = 'asc',
+        $paging = [],
+        $restrictedStates = [],
+        $options = []
+    ) {
         if (true === $page->isLeaf()) {
             return [];
         }
@@ -749,8 +850,16 @@ class PageRepository extends EntityRepository
         $paginate = (is_array($paging) && array_key_exists('start', $paging) && array_key_exists('limit', $paging));
 
         $query = $this->createQueryBuilder('p')
-                ->andIsDescendantOf($page, true, 1, [$orderSort => $orderDir], $paginate ? $paging['limit'] : null, $paginate ? $paging['start'] : 0, false)
-                ->andSearchCriteria($restrictedStates, $options);
+            ->andIsDescendantOf(
+                $page,
+                true,
+                1,
+                [$orderSort => $orderDir],
+                $paginate ? $paging['limit'] : null,
+                $paginate ? $paging['start'] : 0,
+                false
+            )
+            ->andSearchCriteria($restrictedStates, $options);
 
         if (true === $paginate) {
             return new Paginator($query, false);
@@ -762,37 +871,45 @@ class PageRepository extends EntityRepository
     /**
      * Returns count of children of $page.
      *
-     * @param  Page                 $page               The parent page.
-     * @param  string               $orderSort          Optional, the sort field, title by default.
-     * @param  string               $orderDir           Optional, the sort direction, asc by default.
-     * @param  integer[]            $restrictedStates   Optional, limit to pages having provided states, empty by default.
-     * @param  string[]             $options            Optional, the search criteria:
-     *                                                      * 'beforePubdateField'  => timestamp against page._modified,
-     *                                                      * 'afterPubdateField'   => timestamp against page._modified,
+     * @param Page      $page                               The parent page.
+     * @param string    $orderSort                          Optional, the sort field, title by default.
+     * @param string    $orderDir                           Optional, the sort direction, asc by default.
+     * @param integer[] $restrictedStates                   Optional, limit to pages having provided states, empty by
+     *                                                      default.
+     * @param string[]  $options                            Optional, the search criteria:
+     *                                                      * 'beforePubdateField'  => timestamp against
+     *                                                      page._modified,
+     *                                                      * 'afterPubdateField'   => timestamp against
+     *                                                      page._modified,
      *                                                      * 'searchField'         => string to search for title
      *
      * @return integer                                  The children count.
      *
      * @deprecated
      */
-    public function countChildren(Page $page, $orderSort = '_title', $orderDir = 'asc', $restrictedStates = [], $options = [])
-    {
+    public function countChildren(
+        Page $page,
+        $orderSort = '_title',
+        $orderDir = 'asc',
+        $restrictedStates = [],
+        $options = []
+    ) {
         if (true === $page->isLeaf()) {
             return 0;
         }
 
         return $this->createQueryBuilder('p')
-                        ->select("COUNT(p)")
-                        ->andIsDescendantOf($page, true, 1, [$orderSort => $orderDir], null, 0, false)
-                        ->andSearchCriteria($restrictedStates, $options)
-                        ->getQuery()
-                        ->getSingleScalarResult();
+            ->select("COUNT(p)")
+            ->andIsDescendantOf($page, true, 1, [$orderSort => $orderDir], null, 0, false)
+            ->andSearchCriteria($restrictedStates, $options)
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
     /**
      * Sets state of $page and is descendant to STATE_DELETED.
      *
-     * @param  Page                 $page               The page to delete.
+     * @param Page $page The page to delete.
      *
      * @return Page                                     The instance of Page entity.
      */
@@ -802,18 +919,18 @@ class PageRepository extends EntityRepository
 
         if (!$page->isLeaf()) {
             $subquery = $this->getEntityManager()
-                    ->getRepository('BackBee\NestedNode\Section')
-                    ->createQueryBuilder('n')
-                    ->select('n._uid')
-                    ->andIsDescendantOf($page->getSection());
+                ->getRepository('BackBee\NestedNode\Section')
+                ->createQueryBuilder('n')
+                ->select('n._uid')
+                ->andIsDescendantOf($page->getSection());
 
             $this->createQueryBuilder('p')
-                            ->update()
-                            ->set('p._state', Page::STATE_DELETED)
-                            ->andWhere('p._section IN ('.$subquery->getDQL().')')
-                            ->setParameters($subquery->getParameters())
-                            ->getQuery()
-                            ->execute();
+                ->update()
+                ->set('p._state', Page::STATE_DELETED)
+                ->andWhere('p._section IN (' . $subquery->getDQL() . ')')
+                ->setParameters($subquery->getParameters())
+                ->getQuery()
+                ->execute();
         }
 
         return $page;
@@ -822,9 +939,9 @@ class PageRepository extends EntityRepository
     /**
      * Copy a page to a new one.
      *
-     * @param  Page                 $page               The page to be copied.
-     * @param  string|null          $title              Optional, the title of the copy, if null (default) the title of the copied page.
-     * @param  Page|null            $parent             Optional, the parent of the copy, if null (default) the parent of the copied page.
+     * @param Page        $page   The page to be copied.
+     * @param string|null $title  Optional, the title of the copy, if null (default) the title of the copied page.
+     * @param Page|null   $parent Optional, the parent of the copy, if null (default) the parent of the copied page.
      *
      * @return Page                                     The copy of the page.
      *
@@ -839,7 +956,7 @@ class PageRepository extends EntityRepository
         // Cloning the page
         $new_page = clone $page;
         $new_page->setTitle((null === $title) ? $page->getTitle() : $title)
-                ->setLayout($page->getLayout());
+            ->setLayout($page->getLayout());
 
         // Setting the clone as first child of the parent
         if (null !== $parent) {
@@ -855,20 +972,23 @@ class PageRepository extends EntityRepository
     /**
      * Replace subcontent of ContentSet by their clone if exist.
      *
-     * @param  AbstractClassContent $content            The cloned content.
-     * @param  array                $cloningData        The cloned data array.
-     * @param  BBUserToken|null     $token              Optional, the BBuser token to allow the update of revisions if set.
+     * @param AbstractClassContent $content     The cloned content.
+     * @param array                $cloningData The cloned data array.
+     * @param BBUserToken|null     $token       Optional, the BBuser token to allow the update of revisions if set.
      *
      * @return PageRepository
      */
-    private function updateRelatedPostCloning(AbstractClassContent $content, array $cloningData, BBUserToken $token = null)
-    {
+    private function updateRelatedPostCloning(
+        AbstractClassContent $content,
+        array $cloningData,
+        BBUserToken $token = null
+    ) {
         if (
-                $content instanceof ContentSet &&
-                true === array_key_exists('pages', $cloningData) &&
-                true === array_key_exists('contents', $cloningData) &&
-                0 < count($cloningData['pages']) &&
-                0 < count($cloningData['contents'])
+            $content instanceof ContentSet &&
+            true === array_key_exists('pages', $cloningData) &&
+            true === array_key_exists('contents', $cloningData) &&
+            0 < count($cloningData['pages']) &&
+            0 < count($cloningData['contents'])
         ) {
             // reading copied elements
             $copied_pages = array_keys($cloningData['pages']);
@@ -881,16 +1001,20 @@ class PageRepository extends EntityRepository
                 }
 
                 if (
-                        $subcontent instanceof AbstractClassContent &&
-                        null !== $subcontent->getMainNode() &&
-                        true === in_array($subcontent->getMainNode()->getUid(), $copied_pages) &&
-                        true === in_array($subcontent->getUid(), $copied_contents)
+                    $subcontent instanceof AbstractClassContent &&
+                    null !== $subcontent->getMainNode() &&
+                    true === in_array($subcontent->getMainNode()->getUid(), $copied_pages) &&
+                    true === in_array($subcontent->getUid(), $copied_contents)
                 ) {
                     // Loading draft for content
                     if (
-                            null !== $token &&
-                            (null !== $draft = $this->_em->getRepository('BackBee\ClassContent\Revision')->getDraft($content, $token, true))
-                        ) {
+                        null !== $token &&
+                        (null !== $draft = $this->_em->getRepository('BackBee\ClassContent\Revision')->getDraft(
+                                $content,
+                                $token,
+                                true
+                            ))
+                    ) {
                         $content->setDraft($draft);
                     }
                     $content->replaceChildBy($subcontent, $cloningData['contents'][$subcontent->getUid()]);
@@ -904,26 +1028,33 @@ class PageRepository extends EntityRepository
     /**
      * Update mainnode of the content if need during clonage.
      *
-     * @param  AbstractClassContent $content            The cloned content.
-     * @param  array                $cloningPages       The cloned pages array.
-     * @param  BBUserToken|null     $token              Optional, the BBuser token to allow the update of revisions if set.
+     * @param AbstractClassContent $content      The cloned content.
+     * @param array                $cloningPages The cloned pages array.
+     * @param BBUserToken|null     $token        Optional, the BBuser token to allow the update of revisions if set.
      *
      * @return PageRepository
      */
-    private function updateMainNodePostCloning(AbstractClassContent $content, array $cloningPages, BBUserToken $token = null)
-    {
+    private function updateMainNodePostCloning(
+        AbstractClassContent $content,
+        array $cloningPages,
+        BBUserToken $token = null
+    ) {
         $mainnode = $content->getMainNode();
 
         if (
-                null !== $mainnode &&
-                0 < count($cloningPages) &&
-                true === in_array($mainnode->getUid(), array_keys($cloningPages))
-            ) {
+            null !== $mainnode &&
+            0 < count($cloningPages) &&
+            true === in_array($mainnode->getUid(), array_keys($cloningPages))
+        ) {
             // Loading draft for content
             if (
-                    null !== $token &&
-                    (null !== $draft = $this->_em->getRepository('BackBee\ClassContent\Revision')->getDraft($content, $token, true))
-                ) {
+                null !== $token &&
+                (null !== $draft = $this->_em->getRepository('BackBee\ClassContent\Revision')->getDraft(
+                        $content,
+                        $token,
+                        true
+                    ))
+            ) {
                 $content->setDraft($draft);
             }
             $content->setMainNode($cloningPages[$mainnode->getUid()]);
@@ -935,9 +1066,9 @@ class PageRepository extends EntityRepository
     /**
      * Duplicate a page and its descendants.
      *
-     * @param  Page                 $page               The page to be duplicated.
-     * @param  string|null          $title              Optional, the title of the copy, if null (default) the title of the copied page.
-     * @param  Page|null            $parent             Optional, the parent of the copy, if null (default) the parent of the copied page.
+     * @param Page        $page   The page to be duplicated.
+     * @param string|null $title  Optional, the title of the copy, if null (default) the title of the copied page.
+     * @param Page|null   $parent Optional, the parent of the copy, if null (default) the parent of the copied page.
      *
      * @return Page                                     The copy of the page.
      *
@@ -970,18 +1101,26 @@ class PageRepository extends EntityRepository
     /**
      * Duplicate a page and optionnaly its descendants.
      *
-     * @param  Page                 $page               The page to be duplicated.
-     * @param  string|null          $title              Optional, the title of the copy, if null (default) the title of the copied page.
-     * @param  Page|null            $parent             Optional, the parent of the copy, if null (default) the parent of the copied page.
-     * @param  boolean              $recursive          Optional, if true (by default) duplicates recursively the descendants of the page.
-     * @param  BBUserToken|null     $token              Optional, the BBuser token to allow the update of revisions if set.
+     * @param Page             $page      The page to be duplicated.
+     * @param string|null      $title     Optional, the title of the copy, if null (default) the title of the copied
+     *                                    page.
+     * @param Page|null        $parent    Optional, the parent of the copy, if null (default) the parent of the copied
+     *                                    page.
+     * @param boolean          $recursive Optional, if true (by default) duplicates recursively the descendants of the
+     *                                    page.
+     * @param BBUserToken|null $token     Optional, the BBuser token to allow the update of revisions if set.
      *
      * @return Page                                     The copy of the page.
      *
      * @throws InvalidArgumentException                 Raises if the page is recursively duplicated in itself.
      */
-    public function duplicate(Page $page, $title = null, Page $parent = null, $recursive = true, BBUserToken $token = null)
-    {
+    public function duplicate(
+        Page $page,
+        $title = null,
+        Page $parent = null,
+        $recursive = true,
+        BBUserToken $token = null
+    ) {
         if (false === $recursive || false === $page->hasMainSection()) {
             $new_page = $this->copy($page, $title, $parent);
         } else {
@@ -992,8 +1131,7 @@ class PageRepository extends EntityRepository
         // Finally updating contentset and mainnode
         foreach ($new_page->cloningData['contents'] as $content) {
             $this->updateRelatedPostCloning($content, $new_page->cloningData, $token)
-                 ->updateMainNodePostCloning($content, $new_page->cloningData['pages'], $token)
-            ;
+                ->updateMainNodePostCloning($content, $new_page->cloningData['pages'], $token);
         }
 
         return $new_page;
@@ -1002,7 +1140,7 @@ class PageRepository extends EntityRepository
     /**
      * Removes page with no contentset for $site.
      *
-     * @param Site                  $site
+     * @param Site $site
      *
      * @deprecated
      */
@@ -1029,35 +1167,35 @@ class PageRepository extends EntityRepository
     {
         if ($page->hasMainSection()) {
             $this->getEntityManager()
-                    ->getRepository('BackBee\NestedNode\Section')
-                    ->deleteSection($page->getSection());
+                ->getRepository('BackBee\NestedNode\Section')
+                ->deleteSection($page->getSection());
         }
 
         if (null !== $page->getContentSet()) {
             $this->getEntityManager()
-                    ->createQueryBuilder()
-                    ->update('BackBee\NestedNode\\Page', 'p')
-                    ->set('p._contentset', ':null')
-                    ->where('p._contentset = :uid')
-                    ->setParameter('uid', $page->getContentSet()->getUid())
-                    ->setParameter('null', null)
-                    ->getQuery()
-                    ->execute();
-
-            $this->getEntityManager()
-                    ->getRepository('BackBee\ClassContent\AbstractClassContent')
-                    ->deleteContent($page->getContentSet());
-        }
-
-        $this->getEntityManager()
                 ->createQueryBuilder()
-                ->update('BackBee\ClassContent\AbstractClassContent', 'c')
-                ->set('c._mainnode', ':null')
-                ->where('c._mainnode = :uid')
-                ->setParameter('uid', $page->getUid())
+                ->update('BackBee\NestedNode\\Page', 'p')
+                ->set('p._contentset', ':null')
+                ->where('p._contentset = :uid')
+                ->setParameter('uid', $page->getContentSet()->getUid())
                 ->setParameter('null', null)
                 ->getQuery()
                 ->execute();
+
+            $this->getEntityManager()
+                ->getRepository('BackBee\ClassContent\AbstractClassContent')
+                ->deleteContent($page->getContentSet());
+        }
+
+        $this->getEntityManager()
+            ->createQueryBuilder()
+            ->update('BackBee\ClassContent\AbstractClassContent', 'c')
+            ->set('c._mainnode', ':null')
+            ->where('c._mainnode = :uid')
+            ->setParameter('uid', $page->getUid())
+            ->setParameter('null', null)
+            ->getQuery()
+            ->execute();
 
         $this->getEntityManager()->remove($page);
     }
@@ -1065,8 +1203,8 @@ class PageRepository extends EntityRepository
     /**
      * Saves a page with a section and returns it.
      *
-     * @param  Page                 $page               The page to be saved with section.
-     * @param  Section|null         $currentParent      Optional, if provided the parent section of the new one.
+     * @param Page         $page          The page to be saved with section.
+     * @param Section|null $currentParent Optional, if provided the parent section of the new one.
      *
      * @return Page                                     The newly page with section.
      */
@@ -1088,19 +1226,19 @@ class PageRepository extends EntityRepository
         $section = new Section($page->getUid(), ['page' => $page, 'site' => $page->getSite()]);
 
         $this->getEntityManager()
-                ->getRepository('BackBee\NestedNode\Section')
-                ->insertNodeAsFirstChildOf($section, $parent);
+            ->getRepository('BackBee\NestedNode\Section')
+            ->insertNodeAsFirstChildOf($section, $parent);
 
         return $page->setPosition(0)
-                    ->setLevel($section->getLevel());
+            ->setLevel($section->getLevel());
     }
 
     /**
      * Shift position values for pages siblings of and after $page by $delta.
      *
-     * @param  Page                 $page               The page for which to shift position.
-     * @param  integer              $delta              The shift value of position.
-     * @param  boolean              $strict             Does $page is include (true) or not (false, by default).
+     * @param Page    $page   The page for which to shift position.
+     * @param integer $delta  The shift value of position.
+     * @param boolean $strict Does $page is include (true) or not (false, by default).
      *
      * @return PageRepository
      */
@@ -1111,25 +1249,25 @@ class PageRepository extends EntityRepository
         }
 
         $query = $this->createQueryBuilder('p')
-                ->set('p._position', 'p._position + :delta_node')
-                ->andWhere('p._section = :section')
-                ->andWhere('p._position >= :position')
-                ->setParameters([
-                    'delta_node' => $delta,
-                    'section' => $page->getSection(),
-                    'position' => $page->getPosition(),
-                ]);
+            ->set('p._position', 'p._position + :delta_node')
+            ->andWhere('p._section = :section')
+            ->andWhere('p._position >= :position')
+            ->setParameters([
+                'delta_node' => $delta,
+                'section' => $page->getSection(),
+                'position' => $page->getPosition(),
+            ]);
 
         if (true === $strict) {
             $query->andWhere('p != :page')
-                    ->setParameter('page', $page);
+                ->setParameter('page', $page);
         } else {
             $page->setPosition($page->getPosition() + $delta);
         }
 
         $query->update()
-                ->getQuery()
-                ->execute();
+            ->getQuery()
+            ->execute();
 
         return $this;
     }
@@ -1137,9 +1275,9 @@ class PageRepository extends EntityRepository
     /**
      * Shift level values for pages descendants of $page by $delta.
      *
-     * @param  Page                 $page               The page for which to shift level.
-     * @param  integer              $delta              The shift value of position.
-     * @param  boolean              $strict             Does $page is include (true) or not (false, by default).
+     * @param Page    $page   The page for which to shift level.
+     * @param integer $delta  The shift value of position.
+     * @param boolean $strict Does $page is include (true) or not (false, by default).
      *
      * @return PageRepository
      */
@@ -1150,30 +1288,30 @@ class PageRepository extends EntityRepository
         }
 
         $query = $this->createQueryBuilder('p')
-                ->update()
-                ->set('p._level', 'p._level + :delta');
+            ->update()
+            ->set('p._level', 'p._level + :delta');
 
         if (true === $page->hasMainSection()) {
             $subquery = $this->getEntityManager()
-                    ->getRepository('BackBee\NestedNode\Section')
-                    ->createQueryBuilder('n')
-                    ->select('n._uid')
-                    ->andIsDescendantOf($page->getSection());
+                ->getRepository('BackBee\NestedNode\Section')
+                ->createQueryBuilder('n')
+                ->select('n._uid')
+                ->andIsDescendantOf($page->getSection());
 
-            $query->andWhere('p._section IN ('.$subquery->getDQL().')')
-                    ->setParameters($subquery->getParameters());
+            $query->andWhere('p._section IN (' . $subquery->getDQL() . ')')
+                ->setParameters($subquery->getParameters());
 
             if (true === $strict) {
                 $query->andWhere('p <> :page')
-                        ->setParameter('page', $page);
+                    ->setParameter('page', $page);
             }
         } else {
             $query->andWhere('p = :page')
-                    ->setParameter('page', $page);
+                ->setParameter('page', $page);
         }
 
         $query->setParameter('delta', $delta)->getQuery()
-                ->execute();
+            ->execute();
 
         return $this;
     }
@@ -1181,7 +1319,7 @@ class PageRepository extends EntityRepository
     /**
      * Returns the maximum position of children of $page.
      *
-     * @param  Page                 $page
+     * @param Page $page
      *
      * @return integer
      */
@@ -1193,9 +1331,9 @@ class PageRepository extends EntityRepository
 
         $query = $this->createQueryBuilder('p');
         $max = $query->select($query->expr()->max('p._position'))
-                ->andParentIs($page)
-                ->getQuery()
-                ->getResult(\Doctrine\ORM\Query::HYDRATE_SINGLE_SCALAR);
+            ->andParentIs($page)
+            ->getQuery()
+            ->getResult(\Doctrine\ORM\Query::HYDRATE_SINGLE_SCALAR);
 
         return (null === $max) ? 0 : $max;
     }
@@ -1203,9 +1341,9 @@ class PageRepository extends EntityRepository
     /**
      * Updates nodes information of a tree.
      *
-     * @param  string               $nodeUid            The starting point in the tree.
-     * @param  integer              $leftNode           Optional, the first value of left node (1 by default).
-     * @param  integer              $level              Optional, the first value of level (0 by default).
+     * @param string  $nodeUid  The starting point in the tree.
+     * @param integer $leftNode Optional, the first value of left node (1 by default).
+     * @param integer $level    Optional, the first value of level (0 by default).
      *
      * @return \StdClass
      *
@@ -1214,7 +1352,48 @@ class PageRepository extends EntityRepository
     public function updateTreeNatively($nodeUid, $leftNode = 1, $level = 0)
     {
         return $this->_em
-                        ->getRepository('BackBee\NestedNode\Section')
-                        ->updateTreeNatively($nodeUid, $leftNode, $level);
+            ->getRepository('BackBee\NestedNode\Section')
+            ->updateTreeNatively($nodeUid, $leftNode, $level);
+    }
+
+    /**
+     * Get all pages by batch size (by default per 1000).
+     *
+     * @param int $batchSize
+     *
+     * @return iterable
+     */
+    public function getAllPages(int $batchSize = 1000): iterable
+    {
+        $offset = 0;
+
+        do {
+            $pages = $this->findBy([], null, $batchSize, $offset);
+            foreach ($pages as $page) {
+                yield $page;
+            }
+            $offset += $batchSize;
+            $this->clear();
+        } while (\count($pages) === $batchSize);
+    }
+
+    /**
+     * Get total of undeleted pages.
+     *
+     * @return int
+     */
+    public function getTotalOfUndeletedPages(): int
+    {
+        try {
+            return (int)$this->createQueryBuilder('p')
+                ->select('COUNT(p._uid)')
+                ->where('p._state != :state')
+                ->setParameter('state', Page::STATE_DELETED)
+                ->getQuery()
+                ->getSingleScalarResult();
+
+        } catch (\Exception $e) {
+            return 0;
+        }
     }
 }

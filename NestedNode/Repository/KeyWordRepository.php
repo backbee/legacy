@@ -1,5 +1,4 @@
 <?php
-
 /*
  * Copyright (c) 2022 Obione
  *
@@ -27,21 +26,22 @@ use Doctrine\ORM\Tools\Pagination\Paginator;
 use Exception;
 
 /**
- * Keyword repository.
+ * Class KeyWordRepository
  *
- * @category    BackBee
- *
- *
- * @author      n.bremont <nicolas.bremont@lp-digital.fr>
+ * @author n.bremont <nicolas.bremont@lp-digital.fr>
+ * @author Djoudi Bensid <d.bensid@team-one.fr>
  */
 class KeyWordRepository extends NestedNodeRepository
 {
     public function getLikeKeyWords($cond, $max = 10)
     {
         try {
-            $q = $this->createQueryBuilder('k')->andWhere('k._keyWord like :key')->orderBy('k._keyWord', 'ASC')->setMaxResults($max)
-                    ->setParameters(array('key' => $cond.'%'))
-                    ->getQuery();
+            $q = $this->createQueryBuilder('k')->andWhere('k._keyWord like :key')->orderBy(
+                'k._keyWord',
+                'ASC'
+            )->setMaxResults($max)
+                ->setParameters(array('key' => $cond . '%'))
+                ->getQuery();
 
             return $q->getResult();
         } catch (\Doctrine\ORM\NoResultException $e) {
@@ -59,14 +59,14 @@ class KeyWordRepository extends NestedNodeRepository
         /* order */
         if (is_array($orderInfos)) {
             if (array_key_exists('field', $orderInfos) && array_key_exists('dir', $orderInfos)) {
-                $qb->orderBy('kw.'.$orderInfos['field'], $orderInfos['dir']);
+                $qb->orderBy('kw.' . $orderInfos['field'], $orderInfos['dir']);
             }
         }
         /* paging */
         if (is_array($paging) && !empty($paging)) {
             if (array_key_exists('start', $paging) && array_key_exists('limit', $paging)) {
                 $qb->setFirstResult($paging['start'])
-                       ->setMaxResults($paging['limit']);
+                    ->setMaxResults($paging['limit']);
                 $result = new Paginator($qb);
             }
         } else {
@@ -80,8 +80,8 @@ class KeyWordRepository extends NestedNodeRepository
     {
         try {
             $q = $this->createQueryBuilder('k')
-                    ->andWhere('k._parent is NULL')
-                    ->getQuery();
+                ->andWhere('k._parent is NULL')
+                ->getQuery();
 
             return $q->getSingleResult();
         } catch (\Doctrine\ORM\NoResultException $e) {
@@ -134,7 +134,11 @@ class KeyWordRepository extends NestedNodeRepository
                     $queryString .= ' AND page.state < (?)';
                     $secondParam = 1;
                 }
-                $stmt = $db->executeQuery($queryString, array($keywords, $pageStates), array(\Doctrine\DBAL\Connection::PARAM_STR_ARRAY, $secondParam));
+                $stmt = $db->executeQuery(
+                    $queryString,
+                    array($keywords, $pageStates),
+                    array(\Doctrine\DBAL\Connection::PARAM_STR_ARRAY, $secondParam)
+                );
                 $result = array();
                 while ($contendId = $stmt->fetchColumn()) {
                     $result[] = $contendId;
@@ -176,10 +180,10 @@ class KeyWordRepository extends NestedNodeRepository
         unset($element);
 
         $objects = $this->createQueryBuilder('k')
-                ->where('k._uid IN (:uids)')
-                ->setParameter('uids', $uids)
-                ->getQuery()
-                ->getResult();
+            ->where('k._uid IN (:uids)')
+            ->setParameter('uids', $uids)
+            ->getQuery()
+            ->getResult();
 
         foreach ($objects as $object) {
             if (true === array_key_exists($object->getUid(), $assoc)) {
@@ -201,10 +205,12 @@ class KeyWordRepository extends NestedNodeRepository
     public function exists($keyword)
     {
         $object = null;
-        $result = $this->_em->getConnection()->executeQuery(sprintf(
-            'SELECT uid FROM keyword WHERE hex(lower(keyword)) = hex(lower("%s"))',
-            preg_replace('#[/\"]#', '', trim($keyword))
-        ))->fetchAll();
+        $result = $this->_em->getConnection()->executeQuery(
+            sprintf(
+                'SELECT uid FROM keyword WHERE hex(lower(keyword)) = hex(lower("%s"))',
+                preg_replace('#[/\"]#', '', trim($keyword))
+            )
+        )->fetchAll();
 
         if (0 < count($result)) {
             $uid = array_shift($result);
@@ -212,5 +218,44 @@ class KeyWordRepository extends NestedNodeRepository
         }
 
         return $object;
+    }
+
+    /**
+     * Get all tags by batch size (by default per 1000).
+     *
+     * @param int $batchSize
+     *
+     * @return iterable
+     */
+    public function getAllTags(int $batchSize = 1000): iterable
+    {
+        $offset = 0;
+
+        do {
+            $pages = $this->findBy([], null, $batchSize, $offset);
+            foreach ($pages as $page) {
+                yield $page;
+            }
+            $offset += $batchSize;
+            $this->clear();
+        } while (\count($pages) === $batchSize);
+    }
+
+    /**
+     * Returns the total number of tags, or 0 on query failure.
+     *
+     * @return int
+     */
+    public function getTotalOfTags(): int
+    {
+        try {
+            return (int)$this->createQueryBuilder('t')
+                ->select('COUNT(t._uid)')
+                ->getQuery()
+                ->getSingleScalarResult();
+
+        } catch (Exception $e) {
+            return 0;
+        }
     }
 }
