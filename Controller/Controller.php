@@ -21,7 +21,14 @@
 
 namespace BackBee\Controller;
 
+use BackBee\BBApplication;
+use BackBee\Renderer\RendererInterface;
+use BackBee\Routing\RouteCollection;
+use BackBee\Security\User;
 use Doctrine\ORM\EntityManager;
+use LogicException;
+use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Form\Extension\HttpFoundation\HttpFoundationExtension;
@@ -32,9 +39,12 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Validation;
 use BackBee\ApplicationInterface;
+use Symfony\Component\Validator\ValidatorInterface;
+use function get_class;
+use function is_object;
 
 /**
- * Base Controler.
+ * Base Controller.
  *
  * @category    BackBee
  *
@@ -48,27 +58,45 @@ class Controller implements ContainerAwareInterface
      *
      * @var \BackBee\ApplicationInterface
      */
-    protected $application;
+    protected ApplicationInterface $application;
 
     /**
      * Current application's DIC.
      *
-     * @var BackBee\DependencyInjection\ContainerInterface
+     * @var \BackBee\DependencyInjection\ContainerInterface
      */
-    protected $container;
+    protected ContainerInterface $container;
+
+    /**
+     * @var \BackBee\Renderer\RendererInterface
+     */
+    protected RendererInterface $renderer;
+
+    /**
+     * @var \BackBee\Routing\RouteCollection
+     */
+    protected RouteCollection $routing;
+
+    /**
+     * @var \Psr\Log\LoggerInterface
+     */
+    protected LoggerInterface $logger;
 
     /**
      * Class constructor.
      *
      * @access public
      *
-     * @param ApplicationInterface $application The current BBapplication
+     * @param null|\BackBee\ApplicationInterface $application The current BBApplication
      */
     public function __construct(ApplicationInterface $application = null)
     {
-        if (null !== $application) {
+        if ($application !== null) {
             $this->application = $application;
             $this->container = $application->getContainer();
+            $this->renderer = $application->getRenderer();
+            $this->routing = $application->getRouting();
+            $this->logger = $application->getLogging();
         }
     }
 
@@ -77,9 +105,9 @@ class Controller implements ContainerAwareInterface
      *
      * @access public
      *
-     * @return \BackBee\ApplicationInterface
+     * @return \BackBee\ApplicationInterface|object
      */
-    public function getApplication()
+    public function getApplication(): BBApplication
     {
         return $this->container->get('bbapp');
     }
@@ -87,12 +115,12 @@ class Controller implements ContainerAwareInterface
     /**
      * Application's dependency injection container setters.
      *
-     * @param ContainerInterface|null $container
+     * @param ContainerInterface|object|null $container
      */
-    public function setContainer(ContainerInterface $container = null)
+    public function setContainer(ContainerInterface $container = null): void
     {
         $this->container = $container;
-        $this->application = null !== $container ? $this->container->get('bbapp') : null;
+        $this->application = $container !== null ? $this->container->get('bbapp') : null;
     }
 
     /**
@@ -114,7 +142,7 @@ class Controller implements ContainerAwareInterface
      *
      * @return Request
      */
-    public function getRequest()
+    public function getRequest(): Request
     {
         return $this->application->getRequest();
     }
@@ -128,12 +156,18 @@ class Controller implements ContainerAwareInterface
     }
 
     /**
+     * Create form builder.
+     *
+     * @param $data
+     *
      * @return FormBuilderInterface
      */
-    public function createFormBuilder($data)
+    public function createFormBuilder($data): FormBuilderInterface
     {
-        if (!class_exists('Symfony\\Component\\Form\\Forms')) {
-            throw new \RuntimeException('Unable to use ``createFormBuilder`` function as the Symfony Form Component is not installed.');
+        if (!class_exists(Forms::class)) {
+            throw new RuntimeException(
+                'Unable to use ``createFormBuilder`` function as the Symfony Form Component is not installed.'
+            );
         }
 
         $validator = Validation::createValidator();
@@ -141,22 +175,24 @@ class Controller implements ContainerAwareInterface
         $formFactory = Forms::createFormFactoryBuilder()
             ->addExtension(new ValidatorExtension($validator))
             ->addExtension(new HttpFoundationExtension())
-            ->getFormFactory()
-        ;
+            ->getFormFactory();
 
         return $formFactory->createBuilder('form', $data);
     }
 
     /**
-     * @param string                                     $view
-     * @param array                                      $parameters
-     * @param \Symfony\Component\HttpFoundation\Response $response
+     * Render.
+     *
+     * @param string                                          $view
+     * @param array                                           $parameters
+     * @param null|\Symfony\Component\HttpFoundation\Response $response
      *
      * @return \Symfony\Component\HttpFoundation\Response
+     * @throws \Exception
      */
-    public function render($view, array $parameters = array(), Response $response = null)
+    public function render(string $view, array $parameters = array(), Response $response = null): ?Response
     {
-        if (null === $response) {
+        if ($response === null) {
             $response = new Response();
         }
 
@@ -173,20 +209,18 @@ class Controller implements ContainerAwareInterface
             if (!isset($matchesView[1])) {
                 // view is not the full path, so prepend the bundle views dir
                 $bundle = $this->getApplication()->getBundle($bundleName);
-                $bundle->getBaseDir();
-                $view = $bundle->getBaseDir().'/Ressources/views/'.$view;
+
+                if ($bundle) {
+                    $bundle->getBaseDir();
+                    $view = $bundle->getBaseDir() . '/Ressources/views/' . $view;
+                }
             }
         } else {
-            $view = $this->getApplication()->getBBDir().'/Resources/views/'.$view;
+            $view = $this->getApplication()->getBBDir() . '/Resources/views/' . $view;
         }
 
-        try {
-            $this->renderer = $this->getApplication()->getRenderer();
-            $content = $this->renderer->partial($view, $parameters);
-            $response->setContent($content);
-        } catch (\Exception $e) {
-            throw $e;
-        }
+        $content = $this->renderer->partial($view, $parameters);
+        $response->setContent($content);
 
         return $response;
     }
@@ -198,7 +232,7 @@ class Controller implements ContainerAwareInterface
      *
      * @return \Symfony\Component\Validator\ValidatorInterface
      */
-    public function getValidator()
+    public function getValidator(): ValidatorInterface
     {
         return $this->application->getValidator();
     }
@@ -206,14 +240,14 @@ class Controller implements ContainerAwareInterface
     /**
      * Shortcut for Symfony\Component\Security\Core\SecurityContext::isGranted().
      *
-     * @see \Symfony\Component\Security\Core\SecurityContext::isGranted()
-     *
-     * @param string $permission
-     * @param mixed  $object
+     * @param       $attributes
+     * @param mixed $object
      *
      * @return bool
+     * @see \Symfony\Component\Security\Core\SecurityContext::isGranted()
+     *
      */
-    protected function isGranted($attributes, $object = null)
+    protected function isGranted($attributes, $object = null): bool
     {
         return $this->getContainer()->get('security.context')->isGranted($attributes, $object);
     }
@@ -223,20 +257,18 @@ class Controller implements ContainerAwareInterface
      *
      * @return mixed
      *
-     * @see Symfony\Component\Security\Core\Authentication\Token\TokenInterface::getUser()
+     * @see \Symfony\Component\Security\Core\Authentication\Token\TokenInterface::getUser()
      */
-    public function getUser()
+    public function getUser(): ?User
     {
         if (!$this->getContainer()->has('security.context')) {
-            throw new \LogicException('Security context is not defined in your application.');
+            throw new LogicException('Security context is not defined in your application.');
         }
 
-        if (null === $token = $this->getContainer()->get('security.context')->getToken()) {
-            return;
-        }
-
-        if (!is_object($user = $token->getUser())) {
-            return;
+        if (($token = $this->getContainer()->get('security.context')->getToken()) === null ||
+            !is_object($user = $token->getUser())
+        ) {
+            return null;
         }
 
         return $user;
